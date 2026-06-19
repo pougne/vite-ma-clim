@@ -2,7 +2,7 @@ name: vite-ma-clim
 
 on:
   schedule:
-    - cron: "7 * * * *"        # toutes les heures (à HH:07 UTC)
+    - cron: "*/15 * * * *"        # toutes les 15 minutes
   workflow_dispatch: {}          # bouton "Run workflow" manuel
 
 # Un seul passage à la fois.
