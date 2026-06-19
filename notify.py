@@ -97,6 +97,52 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     urllib.request.urlopen(req, timeout=15)
 
 
+def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> None:
+    """Alerte « panne » : une ou plusieurs enseignes ne répondent plus (ou se
+    rétablissent). Envoie via ntfy et/ou email, sans jamais lever d'exception."""
+    if not broken and not recovered:
+        return
+    parts = []
+    if broken:
+        parts.append("⚠️ Ne répond plus : " + ", ".join(broken))
+    if recovered:
+        parts.append("✅ De nouveau OK : " + ", ".join(recovered))
+    body = "\n".join(parts)
+    title = "Vite Ma Clim - surveillance"
+
+    ntfy = notif_cfg.get("ntfy", {})
+    if ntfy.get("enabled"):
+        try:
+            topic_url = ntfy["topic_url"].rstrip("/")
+            req = urllib.request.Request(
+                topic_url, data=body.encode("utf-8"),
+                headers={"Title": title, "Priority": "default",
+                         "Tags": "warning" if broken else "white_check_mark"},
+                method="POST")
+            urllib.request.urlopen(req, timeout=15)
+            print(f"[notify] health ntfy: OK ({body!r})")
+        except Exception as e:
+            print(f"[notify] health ntfy: ECHEC -> {e}")
+
+    em = notif_cfg.get("email", {})
+    if em.get("enabled"):
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = f"[Vite Ma Clim] {title}"
+            msg["From"] = em["from_addr"]; msg["To"] = ", ".join(em["to_addrs"])
+            msg.set_content(body + "\n\n— Vite Ma Clim")
+            ctx = ssl.create_default_context()
+            if em.get("use_ssl", True):
+                with smtplib.SMTP_SSL(em["host"], em.get("port", 465), context=ctx) as srv:
+                    srv.login(em["user"], em["password"]); srv.send_message(msg)
+            else:
+                with smtplib.SMTP(em["host"], em.get("port", 587)) as srv:
+                    srv.starttls(context=ctx); srv.login(em["user"], em["password"]); srv.send_message(msg)
+            print("[notify] health email: OK")
+        except Exception as e:
+            print(f"[notify] health email: ECHEC -> {e}")
+
+
 def dispatch(notif_cfg: dict, results: list[Availability]) -> None:
     """Envoie via tous les canaux activés. Ne lève pas : log seulement."""
     if not results:

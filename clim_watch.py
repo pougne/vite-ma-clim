@@ -52,6 +52,7 @@ def run_checks(cfg: dict, headful: bool) -> list[Availability]:
 
     zones = cfg["zones"]
     results: list[Availability] = []
+    expected_names: list[str] = []
     with sync_playwright() as pw:
         browser, context = make_browser_context(pw, headless=not headful)
         try:
@@ -62,6 +63,7 @@ def run_checks(cfg: dict, headful: bool) -> list[Availability]:
                 if not checker_cls:
                     print(f"[warn] enseigne inconnue: {retailer_key}")
                     continue
+                expected_names.append(checker_cls.name)
                 checker = checker_cls({**rcfg, "home": cfg.get("home")})
                 try:
                     res = list(checker.check(context, rcfg["products"], zones))
@@ -72,7 +74,7 @@ def run_checks(cfg: dict, headful: bool) -> list[Availability]:
         finally:
             context.close()
             browser.close()
-    return results
+    return results, expected_names
 
 
 def self_test_results() -> list[Availability]:
@@ -96,9 +98,13 @@ def self_test_results() -> list[Availability]:
 
 
 def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> None:
-    results = self_test_results() if self_test else run_checks(cfg, headful)
+    if self_test:
+        results, expected_names = self_test_results(), []
+    else:
+        results, expected_names = run_checks(cfg, headful)
 
     to_notify = state.update(results)
+    broken, recovered = state.health_update(expected_names, results)
     state.save()
 
     dash_path = HERE / cfg.get("output", {}).get("dashboard", "dashboard.html")
@@ -111,6 +117,10 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
 
     if to_notify:
         notify.dispatch(cfg["notifications"], to_notify)
+    if broken or recovered:
+        if broken:
+            print(f"[health] enseigne(s) muette(s): {broken}")
+        notify.notify_health(cfg["notifications"], broken, recovered)
 
 
 def main() -> int:

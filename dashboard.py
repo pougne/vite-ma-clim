@@ -88,18 +88,19 @@ def _card(r: Availability) -> str:
     else:
         statetag = '<span class="state state--unk">Inconnu</span>'
     dist = _dist(r)
-    dist_html = f'<span class="km">{dist}</span>' if dist else ""
     btns = []
     if r.url:
         btns.append(f'<a class="btn btn--primary" href="{html.escape(r.url)}" target="_blank">Voir la fiche</a>')
     if r.lat is not None and r.lon is not None:
-        btns.append(f'<a class="btn btn--ghost" href="{_gmaps(r.lat, r.lon)}" target="_blank">Itinéraire</a>')
+        btns.append(f'<a class="btn btn--ghost" href="{_gmaps(r.lat, r.lon)}" target="_blank">Itin\u00e9raire</a>')
     rl = r.retailer.lower()
     bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
             else "b-optimea" if rl.startswith("optimea") else "b-other")
+    geo = f' data-lat="{r.lat}" data-lon="{r.lon}"' if (r.lat is not None and r.lon is not None) else ""
     return (
-        f'<article class="card{" card--ok" if ok else ""}">'
-        f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>{dist_html}</div>'
+        f'<article class="card{" card--ok" if ok else ""}" data-ok="{1 if ok else 0}"{geo}>'
+        f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>'
+        f'<span class="km">{dist}</span></div>'
         f'<h3 class="card-title">{html.escape(r.store_name)}</h3>'
         f'<div class="card-city">{html.escape(r.store_city or "")}</div>'
         f'{statetag}'
@@ -118,6 +119,16 @@ def _map_section(results, home) -> str:
     ]
     if not points:
         return ""
+    bar = (
+        '<div class="geo">'
+        '<span class="geo-ic">\U0001F4CD</span>'
+        '<input id="vmc-cp" placeholder="Code postal ou ville (ex. 92270)">'
+        '<button id="vmc-go" class="geo-btn">OK</button>'
+        '<span class="geo-hint">ou cliquez sur la carte \u2014 r\u00e9f\u00e9rence : '
+        '<b id="vmc-origin-label">Chez vous</b></span>'
+        '<a id="vmc-reset" class="geo-reset" href="#">r\u00e9initialiser</a>'
+        '</div>'
+    )
     script = """
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -125,8 +136,9 @@ def _map_section(results, home) -> str:
   var pts = __POINTS__, home = __HOME__;
   var map = L.map('map', {scrollWheelZoom:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(map);
-  var hb = [], all = [];
+    {maxZoom:19, attribution:'\u00a9 OpenStreetMap'}).addTo(map);
+
+  var markers = [];
   pts.forEach(function(p){
     var ok = p.status === 'in_stock';
     var m = L.circleMarker([p.lat, p.lon], {
@@ -134,24 +146,101 @@ def _map_section(results, home) -> str:
       weight: ok ? 2 : 1, fillColor: ok ? '#6db455' : '#cdd3df',
       fillOpacity: ok ? 0.95 : 0.6
     }).addTo(map);
-    var d = (p.dist!=null? p.dist+' km · ':'');
-    var dir = 'https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lon;
-    m.bindPopup('<b>'+p.name+'</b><br>'+d+(p.city||'')+'<br>'+(p.detail||'')
-      +'<br><a href="'+p.url+'" target="_blank">fiche</a> · '
-      +'<a href="'+dir+'" target="_blank">itinéraire</a>');
-    all.push([p.lat,p.lon]); if(ok) hb.push([p.lat,p.lon]);
+    markers.push({m:m, p:p, ok:ok});
   });
-  if(home && home.lat){
-    L.marker([home.lat, home.lon]).addTo(map).bindPopup('Chez vous'); hb.push([home.lat,home.lon]);
+  var homeMarker = null;
+
+  function rad(d){ return d*Math.PI/180; }
+  function hav(la1,lo1,la2,lo2){
+    var R=6371, dLa=rad(la2-la1), dLo=rad(lo2-lo1);
+    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(rad(la1))*Math.cos(rad(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.sqrt(a));
   }
-  var b = (hb.length ? hb : all);
-  if(b.length===1) map.setView(b[0],11); else map.fitBounds(b,{padding:[30,30]});
+  function fmtKm(d){ if(d==null||!isFinite(d)) return ''; return (d<10? d.toFixed(1): Math.round(d))+' km'; }
+
+  function refreshPopups(o){
+    markers.forEach(function(it){
+      var p=it.p;
+      var d = o ? hav(o.lat,o.lon,p.lat,p.lon) : p.dist;
+      var dir='https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lon;
+      var pre = fmtKm(d); pre = pre ? pre+' \u00b7 ' : '';
+      it.m.bindPopup('<b>'+p.name+'</b><br>'+pre+(p.city||'')+'<br>'+(p.detail||'')
+        +'<br><a href="'+p.url+'" target="_blank">fiche</a> \u00b7 '
+        +'<a href="'+dir+'" target="_blank">itin\u00e9raire</a>');
+    });
+  }
+
+  function sortCards(o){
+    var grid=document.getElementById('grid'); if(!grid) return;
+    var cards=[].slice.call(grid.querySelectorAll('.card'));
+    cards.forEach(function(c){
+      var la=parseFloat(c.getAttribute('data-lat')), lo=parseFloat(c.getAttribute('data-lon'));
+      var d = (o && !isNaN(la) && !isNaN(lo)) ? hav(o.lat,o.lon,la,lo) : Infinity;
+      c._d = d;
+      var km=c.querySelector('.km'); if(km) km.textContent = isFinite(d)? fmtKm(d) : '';
+    });
+    cards.sort(function(a,b){
+      var ao=a.getAttribute('data-ok')==='1', bo=b.getAttribute('data-ok')==='1';
+      if(ao!==bo) return ao?-1:1;
+      return a._d - b._d;
+    });
+    cards.forEach(function(c){ grid.appendChild(c); });
+  }
+
+  function recenter(o){
+    var hb=[], all=[];
+    markers.forEach(function(it){ all.push([it.p.lat,it.p.lon]); if(it.ok) hb.push([it.p.lat,it.p.lon]); });
+    if(o){ hb.push([o.lat,o.lon]); all.push([o.lat,o.lon]); }
+    var b = hb.length ? hb : all;
+    if(b.length===1) map.setView(b[0],11); else if(b.length) map.fitBounds(b,{padding:[30,30]});
+  }
+
+  function setOrigin(lat,lon,label,opts){
+    opts=opts||{};
+    var o={lat:lat,lon:lon,label:label||'Point choisi'};
+    if(homeMarker) homeMarker.setLatLng([lat,lon]); else homeMarker=L.marker([lat,lon]).addTo(map);
+    homeMarker.bindPopup(o.label);
+    sortCards(o); refreshPopups(o);
+    var lbl=document.getElementById('vmc-origin-label'); if(lbl) lbl.textContent=o.label;
+    if(opts.recenter!==false) recenter(o);
+    if(opts.save!==false){ try{ localStorage.setItem('vmc_origin', JSON.stringify(o)); }catch(e){} }
+  }
+
+  var start=null;
+  try{ var sv=localStorage.getItem('vmc_origin'); if(sv) start=JSON.parse(sv); }catch(e){}
+  if(!start && home && home.lat) start={lat:home.lat,lon:home.lon,label:'Chez vous'};
+  if(start) setOrigin(start.lat,start.lon,start.label,{save:false});
+  else { refreshPopups(null); recenter(null); }
+
+  map.on('click', function(e){ setOrigin(e.latlng.lat, e.latlng.lng, 'Point choisi'); });
+
+  var go=document.getElementById('vmc-go'), cp=document.getElementById('vmc-cp');
+  function geocode(){
+    var q=(cp.value||'').trim(); if(!q) return;
+    go.disabled=true; var old=go.textContent; go.textContent='\u2026';
+    fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j.features && j.features.length){
+          var f=j.features[0], c=f.geometry.coordinates;
+          setOrigin(c[1], c[0], f.properties.label || q);
+        } else { alert('Lieu introuvable : '+q); }
+      })
+      .catch(function(){ alert('G\u00e9ocodage indisponible pour le moment'); })
+      .then(function(){ go.disabled=false; go.textContent=old; });
+  }
+  if(go) go.addEventListener('click', geocode);
+  if(cp) cp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); geocode(); } });
+  var rst=document.getElementById('vmc-reset');
+  if(rst) rst.addEventListener('click', function(e){ e.preventDefault();
+    try{ localStorage.removeItem('vmc_origin'); }catch(e2){}
+    if(home && home.lat) setOrigin(home.lat,home.lon,'Chez vous',{save:false}); });
 })();
 </script>
 """
     script = script.replace("__POINTS__", json.dumps(points, ensure_ascii=False))
     script = script.replace("__HOME__", json.dumps(home or {}))
-    return '<div id="map"></div>' + script
+    return bar + '<div id="map"></div>' + script
 
 
 def render(results: list[Availability], out_path: str | Path, home: dict | None = None) -> Path:
@@ -238,6 +327,18 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .btn--ghost:hover {{ border-color:var(--primary); }}
   .empty {{ text-align:center; color:var(--mut); }}
   footer {{ text-align:center; color:var(--mut); font-size:12px; padding:0 20px 40px; }}
+  .geo {{ max-width:1100px; margin:18px auto 0; padding:0 20px; display:flex; align-items:center;
+          gap:8px; flex-wrap:wrap; }}
+  .geo-ic {{ font-size:16px; }}
+  .geo input {{ flex:0 1 240px; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
+                font-size:14px; }}
+  .geo-btn {{ padding:9px 14px; border:none; border-radius:10px; background:var(--primary); color:#fff;
+              font-weight:700; font-size:14px; cursor:pointer; }}
+  .geo-btn:hover {{ background:var(--primary-dark); }}
+  .geo-hint {{ color:var(--mut); font-size:13px; }}
+  .geo-hint b {{ color:var(--txt); }}
+  .geo-reset {{ color:var(--primary); font-size:13px; text-decoration:none; margin-left:auto; }}
+  .geo-reset:hover {{ text-decoration:underline; }}
 </style></head>
 <body>
 <div class="topbar"><div class="in">
@@ -258,7 +359,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
 
 {map_html}
 
-<div class="grid">
+<div class="grid" id="grid">
 {cards}
 </div>
 
