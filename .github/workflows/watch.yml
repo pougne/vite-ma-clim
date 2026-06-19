@@ -2,7 +2,7 @@ name: vite-ma-clim
 
 on:
   schedule:
-    - cron: "*/15 * * * *"      # toutes les 15 min (ajuste si tu veux : */10, */5...)
+    - cron: "7,17,27,37,47,57 * * * *"   # ~toutes les 10 min, decale du haut de l'heure (plus fiable)
   workflow_dispatch: {}
 
 concurrency:
