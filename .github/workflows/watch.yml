@@ -39,6 +39,7 @@ jobs:
         run: |
           mkdir -p site
           cp dashboard.html site/index.html
+          cp -f icon.png manifest.webmanifest site/ 2>/dev/null || true
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
