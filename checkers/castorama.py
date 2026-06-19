@@ -1,14 +1,13 @@
-"""Checker Castorama — appel DIRECT des API internes depuis la page.
+"""Checker Castorama — API internes (Kingfisher), appels PARALLÉLISÉS par lots.
 
-On charge la fiche produit une fois (origine + cookies), puis on appelle :
-  1. api.kingfisher.com/v1/mobile/stores/CAFR?nearLatLong=<lat,lon>
-       &page[size]=10&include=clickAndCollect,stock&filter[ean]=<EAN>
-     (en-tête Authorization "Atmosphere" embarqué dans le site) -> magasins proches.
-  2. /casto-browse-mfe/api/fulfilment-options?compositeOfferId=<EAN>
-       &storeId=<id>&postalCode=<cp>   (same-origin) -> dispo nette par magasin.
+On charge la fiche produit une fois (origine + cookies), puis :
+  1. UN appel page.evaluate qui interroge toutes les villes en parallèle (par
+     lots) -> magasins proches + coordonnées.
+  2. UN appel page.evaluate qui interroge la dispo de tous les magasins en
+     parallèle (par lots) via l'API same-origin fulfilment-options.
 
-La distance affichée est calculée à vol d'oiseau depuis le point "home" de la
-config (donc cohérente quel que soit la ville qui a permis de trouver le magasin).
+La parallélisation par lots garde une charge raisonnable tout en divisant le
+temps par ~10 vs. des appels séquentiels.
 """
 from __future__ import annotations
 
@@ -16,37 +15,79 @@ import json
 import math
 
 from models import Availability, IN_STOCK, OUT_OF_STOCK, UNKNOWN
-from .base import Checker, accept_cookies, log
+from .base import Checker, log
 
 AVAILABLE = "Available"
+STORES_BATCH = 8       # villes interrogées simultanément
+FULFIL_BATCH = 12      # magasins interrogés simultanément
 
 ATMOSPHERE_AUTH = ("Atmosphere atmosphere_app_id="
                    "kingfisher-o4ITR0sWAyCVQBraQf4Es61jHV3dN4oO9UwJQMrS")
 
-_STORES_JS = """
-async ([ean, lat, lon, auth]) => {
-  const u = `https://api.kingfisher.com/v1/mobile/stores/CAFR?nearLatLong=${lat}%2C${lon}`
-          + `&page[size]=10&include=clickAndCollect,stock&filter[ean]=${ean}`;
-  try {
-    const r = await fetch(u, {credentials: 'include',
-                              headers: {'accept': 'application/json',
-                                        'authorization': auth}});
-    const txt = await r.text();
-    return {status: r.status, body: txt.slice(0, 300000)};
-  } catch (e) { return {status: -1, error: String(e)}; }
+# --- JS : magasins proches de chaque (lat,lon), en parallèle par lots --------
+_STORES_BATCH_JS = """
+async ([ean, auth, latlons, batchSize]) => {
+  async function inBatches(items, size, fn) {
+    const out = [];
+    for (let i = 0; i < items.length; i += size) {
+      out.push(...await Promise.all(items.slice(i, i + size).map(fn)));
+    }
+    return out;
+  }
+  function extract(j) {
+    const out = [];
+    for (const s of ((j && j.data) || [])) {
+      if (s.type !== 'store') continue;
+      const a = s.attributes || {}, st = a.store || {};
+      const geo = (st.geoCoordinates || a.geoCoordinates || {});
+      const c = geo.coordinates || {};
+      let lat = (c.latitude != null ? c.latitude : geo.latitude);
+      let lon = (c.longitude != null ? c.longitude : geo.longitude);
+      out.push({
+        id: String(s.id),
+        name: a.name || st.name || null,
+        cp: ((geo.postalCode || '') + '').trim(),
+        lat: (lat != null ? Number(lat) : null),
+        lon: (lon != null ? Number(lon) : null)
+      });
+    }
+    return out;
+  }
+  return await inBatches(latlons, batchSize, async (ll) => {
+    const u = `https://api.kingfisher.com/v1/mobile/stores/CAFR?nearLatLong=${ll[0]}%2C${ll[1]}`
+            + `&page[size]=10&include=clickAndCollect,stock&filter[ean]=${ean}`;
+    try {
+      const r = await fetch(u, {credentials: 'include',
+        headers: {'accept': 'application/json', 'authorization': auth}});
+      if (r.status !== 200) return {status: r.status, stores: []};
+      const j = await r.json();
+      return {status: 200, stores: extract(j)};
+    } catch (e) { return {status: -1, stores: [], error: String(e)}; }
+  });
 }
 """
 
-_FULFILMENT_JS = """
-async ([ean, storeId, postalCode]) => {
-  const u = `/casto-browse-mfe/api/fulfilment-options?compositeOfferId=${ean}`
-            + `&storeId=${storeId}&postalCode=${postalCode}`;
-  try {
-    const r = await fetch(u, {credentials: 'include',
-                              headers: {'accept': 'application/json'}});
-    if (!r.ok) return {__error: r.status};
-    return await r.json();
-  } catch (e) { return {__error: String(e)}; }
+# --- JS : dispo par magasin (same-origin), en parallèle par lots -------------
+_FULFILMENT_BATCH_JS = """
+async ([ean, pairs, batchSize]) => {
+  async function inBatches(items, size, fn) {
+    const out = [];
+    for (let i = 0; i < items.length; i += size) {
+      out.push(...await Promise.all(items.slice(i, i + size).map(fn)));
+    }
+    return out;
+  }
+  return await inBatches(pairs, batchSize, async (p) => {
+    const sid = p[0], cp = p[1];
+    const u = `/casto-browse-mfe/api/fulfilment-options?compositeOfferId=${ean}`
+            + `&storeId=${sid}&postalCode=${cp}`;
+    try {
+      const r = await fetch(u, {credentials: 'include',
+        headers: {'accept': 'application/json'}});
+      if (!r.ok) return {sid: sid, __error: r.status};
+      return {sid: sid, data: await r.json()};
+    } catch (e) { return {sid: sid, __error: String(e)}; }
+  });
 }
 """
 
@@ -77,12 +118,10 @@ class CastoramaChecker(Checker):
         ean = str(product["ref"]).split("_")[0]
         label = product.get("label", ean)
         url = product["url"]
-        out: list[Availability] = []
 
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=45000)
-            accept_cookies(page)
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(1200)
         except Exception as e:
             log(f"Castorama: chargement KO {url}: {e}")
             return [self._mk(label, ean, "en-ligne", "Castorama (page KO)", "",
@@ -90,17 +129,28 @@ class CastoramaChecker(Checker):
 
         stores = self._collect_stores(page, ean, zones)
         if not stores:
-            out.append(self._mk(label, ean, "en-ligne", "Castorama (aucun magasin)",
-                                "", UNKNOWN, "API magasins sans résultat", url))
-            return out
+            return [self._mk(label, ean, "en-ligne", "Castorama (aucun magasin)",
+                             "", UNKNOWN, "API magasins sans résultat", url)]
 
-        log(f"Castorama: {len(stores)} magasin(s) unique(s) à interroger.")
+        # Dispo de tous les magasins en parallèle (par lots).
+        pairs = [[sid, s["cp"] or ""] for sid, s in stores.items()]
+        try:
+            fres = page.evaluate(_FULFILMENT_BATCH_JS, [ean, pairs, FULFIL_BATCH])
+        except Exception as e:
+            log(f"Castorama: fulfilment batch KO: {e}")
+            fres = []
+        by_sid = {}
+        for r in fres:
+            sid = str(r.get("sid"))
+            if r.get("__error") is not None:
+                by_sid[sid] = (UNKNOWN, f"API KO ({r.get('__error')})")
+            else:
+                by_sid[sid] = self._parse_fulfilment(r.get("data"))
+
+        log(f"Castorama: {len(stores)} magasin(s), dispo récupérée pour {len(by_sid)}.")
+        out = []
         for sid, s in stores.items():
-            try:
-                data = page.evaluate(_FULFILMENT_JS, [ean, sid, s["cp"] or ""])
-            except Exception as e:
-                data = {"__error": str(e)}
-            status, detail = self._parse_fulfilment(data)
+            status, detail = by_sid.get(sid, (UNKNOWN, "pas de réponse"))
             out.append(self._mk(label, ean, f"casto-{sid}",
                                 s["name"] or f"Magasin {sid}", s["city"],
                                 status, detail, url, s["distance"], s["lat"], s["lon"]))
@@ -109,79 +159,41 @@ class CastoramaChecker(Checker):
     def _collect_stores(self, page, ean, zones) -> dict:
         home = self.config.get("home") or {}
         hlat, hlon = home.get("lat"), home.get("lon")
+        zs = [z for z in zones if z.get("lat") is not None and z.get("lon") is not None]
+        latlons = [[z["lat"], z["lon"]] for z in zs]
+        names = [z.get("name", "") for z in zs]
+        try:
+            results = page.evaluate(_STORES_BATCH_JS, [ean, ATMOSPHERE_AUTH, latlons, STORES_BATCH])
+        except Exception as e:
+            log(f"Castorama: stores batch KO: {e}")
+            return {}
+
         stores: dict[str, dict] = {}
-        for zone in zones:
-            lat, lon = zone.get("lat"), zone.get("lon")
-            name = zone.get("name", "")
-            if lat is None or lon is None:
-                continue
-            try:
-                res = page.evaluate(_STORES_JS, [ean, lat, lon, ATMOSPHERE_AUTH])
-            except Exception as e:
-                log(f"Castorama: zone {name}: evaluate KO: {e}")
-                continue
+        for name, res in zip(names, results):
             if res.get("status") != 200:
-                log(f"Castorama: zone {name}: HTTP {res.get('status')} {res.get('error','')}".strip())
-                continue
-            try:
-                data = json.loads(res["body"])
-            except Exception:
-                log(f"Castorama: zone {name}: HTTP 200 mais JSON illisible")
+                log(f"Castorama: zone {name}: HTTP {res.get('status')} {res.get('error', '')}".strip())
                 continue
             n_before = len(stores)
-            for s in self._parse_stores(data, name):
-                # distance depuis "home" si on a les coordonnées du magasin
-                if hlat is not None and s["lat"] is not None:
-                    s["distance"] = round(_haversine_km(hlat, hlon, s["lat"], s["lon"]), 1)
-                prev = stores.get(s["id"])
-                if prev is None or (s["distance"] or 1e9) < (prev["distance"] or 1e9):
-                    stores[s["id"]] = s
+            for s in res.get("stores", []):
+                sid = s.get("id")
+                if not sid:
+                    continue
+                dist = None
+                if hlat is not None and s.get("lat") is not None:
+                    dist = round(_haversine_km(hlat, hlon, s["lat"], s["lon"]), 1)
+                entry = {"name": s.get("name"), "cp": (s.get("cp") or ""),
+                         "lat": s.get("lat"), "lon": s.get("lon"),
+                         "distance": dist, "city": name}
+                prev = stores.get(sid)
+                if prev is None or (entry["distance"] or 1e9) < (prev["distance"] or 1e9):
+                    stores[sid] = entry
             log(f"Castorama: zone {name}: HTTP 200, +{len(stores) - n_before} magasin(s)")
         return stores
 
-    # ---- parsing -----------------------------------------------------------
-    @staticmethod
-    def _parse_stores(resp, city) -> list[dict]:
-        res = []
-        for s in (resp or {}).get("data", []):
-            if s.get("type") != "store":
-                continue
-            attrs = s.get("attributes", {})
-            store = attrs.get("store", {})
-            geo = store.get("geoCoordinates", {}) or attrs.get("geoCoordinates", {})
-            coords = geo.get("coordinates", {}) or {}
-            slat = coords.get("latitude", geo.get("latitude"))
-            slon = coords.get("longitude", geo.get("longitude"))
-            try:
-                slat = float(slat) if slat is not None else None
-                slon = float(slon) if slon is not None else None
-            except (TypeError, ValueError):
-                slat = slon = None
-            dist = None
-            gsr = attrs.get("geoSearchResults", {})
-            if isinstance(gsr.get("distance"), (int, float)):
-                dist = float(gsr["distance"])
-            else:
-                raw = attrs.get("distance") or store.get("distance") or ""
-                try:
-                    dist = float(str(raw).split()[0].replace(",", "."))
-                except Exception:
-                    dist = None
-            res.append({
-                "id": str(s.get("id")),
-                "name": attrs.get("name") or store.get("name"),
-                "cp": (geo.get("postalCode") or "").strip(),
-                "lat": slat, "lon": slon,
-                "distance": dist,
-                "city": city,
-            })
-        return res
-
     @staticmethod
     def _parse_fulfilment(data):
-        if not isinstance(data, dict) or data.get("__error") is not None:
-            err = data.get("__error") if isinstance(data, dict) else "?"
-            return UNKNOWN, f"API KO ({err})"
+        if not isinstance(data, dict):
+            return UNKNOWN, "réponse inattendue"
         try:
             attrs = data["data"][0]["attributes"]
         except (KeyError, IndexError, TypeError):
