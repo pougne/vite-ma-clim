@@ -9,11 +9,27 @@ from email.message import EmailMessage
 from models import Availability
 
 
+def _km(r: Availability) -> str:
+    d = getattr(r, "distance_km", None)
+    return "" if d is None else f"{d:.0f} km"
+
+
+def _by_distance(results: list[Availability]):
+    return sorted(results, key=lambda x: (
+        x.distance_km if x.distance_km is not None else 1e9,
+        x.retailer, x.store_city or "", x.store_name))
+
+
 def _format_lines(results: list[Availability]) -> str:
     lines = []
-    for r in sorted(results, key=lambda x: (x.retailer, x.store_city, x.store_name)):
-        lines.append(f"• {r.retailer} — {r.store_name} ({r.store_city or '—'}) : "
-                     f"{r.detail or 'dispo'}\n  {r.url}")
+    for r in _by_distance(results):
+        loc = (f"{r.store_name} ({r.store_city})"
+               if r.store_city and r.store_city != "—" else r.store_name)
+        head = f"• {r.retailer} — {loc}"
+        d = _km(r)
+        if d:
+            head += f" · {d}"
+        lines.append(f"{head}\n  {r.detail or 'dispo'}\n  {r.url}")
     return "\n".join(lines)
 
 
@@ -46,17 +62,35 @@ def notify_email(cfg: dict, results: list[Availability]) -> None:
 def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     if not cfg.get("enabled"):
         return
-    body = _format_lines(results).encode("utf-8")
+    res = _by_distance(results)
+    primary = res[0]
+    n = len(res)
     topic_url = cfg["topic_url"].rstrip("/")
+
+    # Titre : indique directement l'enseigne / la ville la plus proche.
+    where = primary.store_city if (primary.store_city and primary.store_city != "-") else primary.retailer
+    km = _km(primary)
+    if n == 1:
+        title = f"PortaSplit dispo - {primary.retailer} {primary.store_city or ''}".strip()
+    else:
+        near = f"{primary.retailer} {where}".strip() + (f" {km}" if km else "")
+        title = f"{n} dispos Midea PortaSplit - au plus pres: {near}"
+
+    # Boutons tappables : fiche produit (+ itineraire si on a les coordonnees).
+    actions = [f"view, Voir la fiche, {primary.url}, clear=true"]
+    if primary.lat is not None and primary.lon is not None:
+        gmaps = f"https://www.google.com/maps/dir/?api=1&destination={primary.lat},{primary.lon}"
+        actions.append(f"view, Itineraire, {gmaps}")
+
     req = urllib.request.Request(
         topic_url,
-        data=body,
+        data=_format_lines(res).encode("utf-8"),
         headers={
-            "Title": f"Vite Ma Clim · {len(results)} dispo(s) PortaSplit",
+            "Title": title,
             "Priority": "high",
             "Tags": "snowflake",
-            # Clique sur la notif -> ouvre la 1re fiche produit.
-            "Click": results[0].url if results else topic_url,
+            "Click": primary.url or topic_url,
+            "Actions": "; ".join(actions[:3]),
         },
         method="POST",
     )

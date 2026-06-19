@@ -94,9 +94,12 @@ def _card(r: Availability) -> str:
         btns.append(f'<a class="btn btn--primary" href="{html.escape(r.url)}" target="_blank">Voir la fiche</a>')
     if r.lat is not None and r.lon is not None:
         btns.append(f'<a class="btn btn--ghost" href="{_gmaps(r.lat, r.lon)}" target="_blank">Itinéraire</a>')
+    rl = r.retailer.lower()
+    bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
+            else "b-optimea" if rl.startswith("optimea") else "b-other")
     return (
         f'<article class="card{" card--ok" if ok else ""}">'
-        f'<div class="card-head"><span class="badge {("b-casto" if r.retailer.lower().startswith("casto") else "b-boul")}">{html.escape(r.retailer)}</span>{dist_html}</div>'
+        f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>{dist_html}</div>'
         f'<h3 class="card-title">{html.escape(r.store_name)}</h3>'
         f'<div class="card-city">{html.escape(r.store_city or "")}</div>'
         f'{statetag}'
@@ -160,7 +163,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     cards = "\n".join(_card(r) for r in results) or '<p class="empty">Aucune donnée.</p>'
 
     headline = (f"{n_dispo} point{'s' if n_dispo > 1 else ''} de vente "
-                f"propose{'nt' if n_dispo > 1 else ''} le PortaSplit&nbsp;!"
+                f"propose{'nt' if n_dispo > 1 else ''} le Midea PortaSplit&nbsp;!"
                 if n_dispo else "Aucune disponibilité pour le moment")
     sub = ("Cliquez sur une fiche disponible pour réserver." if n_dispo
            else f"Surveillance active sur {n_total} points de vente. Vous serez notifié dès qu'une dispo apparaît.")
@@ -206,27 +209,28 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   #map {{ height:360px; max-width:1100px; margin:20px auto 0; border-radius:18px;
           border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,23,40,.05); }}
   .leaflet-popup-content {{ font-size:13px; }}
-  .grid {{ max-width:1100px; margin:24px auto 64px; padding:0 20px;
-           display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }}
-  .card {{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px;
-           box-shadow:0 2px 8px rgba(20,23,40,.05); display:flex; flex-direction:column; gap:8px; }}
+  .grid {{ max-width:1100px; margin:18px auto 56px; padding:0 20px;
+           display:grid; grid-template-columns:repeat(auto-fill,minmax(208px,1fr)); gap:11px; }}
+  .card {{ background:var(--card); border:1px solid var(--line); border-radius:13px; padding:11px 13px;
+           box-shadow:0 1px 5px rgba(20,23,40,.06); display:flex; flex-direction:column; gap:5px; }}
   .card--ok {{ border:1.5px solid var(--success); box-shadow:0 4px 18px rgba(109,180,85,.18); }}
   .card-head {{ display:flex; align-items:center; justify-content:space-between; }}
-  .km {{ color:var(--mut); font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }}
-  .badge {{ padding:3px 10px; border-radius:8px; font-size:11px; font-weight:800; color:#fff; letter-spacing:.3px; }}
+  .km {{ color:var(--mut); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }}
+  .badge {{ padding:2px 8px; border-radius:7px; font-size:10px; font-weight:800; color:#fff; letter-spacing:.3px; }}
   .b-casto {{ background:#0a8a3f; }} .b-boul {{ background:#e2541d; }}
-  .card-title {{ font-size:16px; margin:2px 0 0; font-weight:700; }}
-  .card-city {{ color:var(--mut); font-size:13px; }}
-  .state {{ align-self:flex-start; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:800; }}
+  .b-optimea {{ background:#5561d9; }} .b-other {{ background:#737a8c; }}
+  .card-title {{ font-size:14.5px; margin:1px 0 0; font-weight:700; line-height:1.2; }}
+  .card-city {{ color:var(--mut); font-size:11.5px; }}
+  .state {{ align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:10.5px; font-weight:800; }}
   .state--ok {{ background:var(--success-tint); color:var(--success-dark); }}
   .state--no {{ background:#f1f2f6; color:#8b92a3; }}
   .state--unk {{ background:#fdf2e2; color:#c77d22; }}
-  .tags {{ display:flex; flex-wrap:wrap; gap:6px; }}
-  .tag {{ padding:3px 9px; border-radius:7px; font-size:11px; font-weight:600; }}
+  .tags {{ display:flex; flex-wrap:wrap; gap:4px; }}
+  .tag {{ padding:2px 7px; border-radius:6px; font-size:10px; font-weight:600; }}
   .tag--good {{ background:var(--success-tint); color:var(--success-dark); }}
   .tag--mut {{ background:#f1f2f6; color:#8b92a3; }}
-  .card-btns {{ display:flex; gap:8px; margin-top:6px; }}
-  .btn {{ flex:1; text-align:center; padding:9px 12px; border-radius:11px; font-size:13px;
+  .card-btns {{ display:flex; gap:6px; margin-top:4px; }}
+  .btn {{ flex:1; text-align:center; padding:6px 10px; border-radius:9px; font-size:12px;
           font-weight:700; text-decoration:none; }}
   .btn--primary {{ background:var(--primary); color:#fff; }}
   .btn--primary:hover {{ background:var(--primary-dark); }}
