@@ -74,7 +74,7 @@ retailers:
   leroymerlin:
     # EXPERIMENTAL : Leroy Merlin est protege par DataDome. Si les logs affichent
     # "bloque DataDome", mets enabled: false (l'IP du cloud peut etre filtree).
-    enabled: true
+    enabled: false
     products:
       - ref: "93857579"
         label: "Midea PortaSplit (Leroy Merlin)"
