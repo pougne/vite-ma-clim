@@ -1,0 +1,98 @@
+# =====================================================================
+#  clim-watch — configuration
+#  Seul fichier à éditer au quotidien.
+# =====================================================================
+
+# Intervalle entre deux passages en mode --loop (le Planificateur de tâches
+# Windows ignore cette valeur : c'est lui qui cadence).
+interval_minutes: 60
+
+# ---------------------------------------------------------------------
+# Zones à surveiller : un code postal par ville. Le checker saisit ce CP
+# sur le site et lit les magasins proches. ≤ ~2h30 de Paris.
+# ---------------------------------------------------------------------
+# Point de référence pour les distances. Valeur par défaut = Paris-centre.
+# Pour tes coordonnées exactes sans les publier : secrets VMC_HOME_LAT / VMC_HOME_LON.
+home: { lat: 48.8566, lon: 2.3522 }
+
+# Couverture nationale : chaque ville renvoie les 10 magasins les plus proches.
+# La déduplication évite les doublons -> on couvre l'essentiel des Castorama de France.
+zones:
+  - { name: "Paris",            lat: 48.8566, lon: 2.3522 }
+  - { name: "Lille",            lat: 50.6292, lon: 3.0573 }
+  - { name: "Reims",            lat: 49.2583, lon: 4.0317 }
+  - { name: "Amiens",           lat: 49.8941, lon: 2.2958 }
+  - { name: "Rouen",            lat: 49.4432, lon: 1.0993 }
+  - { name: "Le Havre",         lat: 49.4944, lon: 0.1079 }
+  - { name: "Caen",             lat: 49.1829, lon: -0.3707 }
+  - { name: "Orléans",          lat: 47.9029, lon: 1.9093 }
+  - { name: "Tours",            lat: 47.3941, lon: 0.6848 }
+  - { name: "Le Mans",          lat: 48.0061, lon: 0.1996 }
+  - { name: "Rennes",           lat: 48.1173, lon: -1.6778 }
+  - { name: "Nantes",           lat: 47.2184, lon: -1.5536 }
+  - { name: "Brest",            lat: 48.3904, lon: -4.4861 }
+  - { name: "Troyes",           lat: 48.2973, lon: 4.0744 }
+  - { name: "Dijon",            lat: 47.3220, lon: 5.0415 }
+  - { name: "Nancy",            lat: 48.6921, lon: 6.1844 }
+  - { name: "Strasbourg",       lat: 48.5734, lon: 7.7521 }
+  - { name: "Besançon",         lat: 47.2378, lon: 6.0241 }
+  - { name: "Lyon",             lat: 45.7640, lon: 4.8357 }
+  - { name: "Clermont-Ferrand", lat: 45.7772, lon: 3.0870 }
+  - { name: "Grenoble",         lat: 45.1885, lon: 5.7245 }
+  - { name: "Bordeaux",         lat: 44.8378, lon: -0.5792 }
+  - { name: "Limoges",          lat: 45.8336, lon: 1.2611 }
+  - { name: "Toulouse",         lat: 43.6047, lon: 1.4442 }
+  - { name: "Montpellier",      lat: 43.6108, lon: 3.8767 }
+  - { name: "Marseille",        lat: 43.2965, lon: 5.3698 }
+  - { name: "Nice",             lat: 43.7102, lon: 7.2620 }
+
+# ---------------------------------------------------------------------
+# Enseignes et produits. ref/url = ce que tu as repéré sur chaque site.
+# ---------------------------------------------------------------------
+retailers:
+  boulanger:
+    enabled: true
+    products:
+      - ref: "1216685"
+        label: "Midea PortaSplit (Boulanger)"
+        url: "https://www.boulanger.com/ref/1216685"
+
+  castorama:
+    enabled: true
+    products:
+      - ref: "8431312260509_CAFR"
+        label: "Midea PortaSplit 3500W (Castorama)"
+        url: "https://www.castorama.fr/climatiseur-portasplit-midea-reversible-3500w/8431312260509_CAFR.prd"
+
+  # Pour ajouter Leroy Merlin, Darty, ManoMano... : créer checkers/<nom>.py
+  # sur le modèle des deux autres, puis l'enregistrer dans checkers/__init__.py.
+
+# ---------------------------------------------------------------------
+# Notifications. Active au moins un canal.
+# ---------------------------------------------------------------------
+notifications:
+  # --- ntfy : le plus simple. Installe l'appli ntfy (iOS/Android), abonne-toi
+  #     à un nom de sujet privé et difficile à deviner, ex : clim-portasplit-xyz918.
+  #     Aucune inscription, aucun mot de passe.
+  ntfy:
+    enabled: true
+    topic_url: "https://ntfy.sh/clim-portasplit-CHANGE-MOI-en-un-truc-secret"
+
+  # --- email : via SMTP. Pour Gmail, crée un "mot de passe d'application"
+  #     (compte Google -> Sécurité -> Validation en 2 étapes -> Mots de passe
+  #     d'application). Ne mets JAMAIS ton mot de passe Gmail principal ici.
+  email:
+    enabled: false
+    host: "smtp.gmail.com"
+    port: 465
+    use_ssl: true
+    user: "ton.adresse@gmail.com"
+    password: "mot-de-passe-application-16-lettres"
+    from_addr: "ton.adresse@gmail.com"
+    to_addrs:
+      - "ton.adresse@gmail.com"
+
+# ---------------------------------------------------------------------
+output:
+  dashboard: "dashboard.html"
+  state: "state.json"
