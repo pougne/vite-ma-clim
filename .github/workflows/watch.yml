@@ -2,36 +2,31 @@ name: vite-ma-clim
 
 on:
   schedule:
-    - cron: "*/15 * * * *"        # toutes les 15 minutes
-  workflow_dispatch: {}          # bouton "Run workflow" manuel
+    - cron: "*/15 * * * *"      # toutes les 15 min (ajuste si tu veux : */10, */5...)
+  workflow_dispatch: {}
 
-# Un seul passage à la fois.
 concurrency:
   group: vite-ma-clim
   cancel-in-progress: false
 
 permissions:
-  contents: write                # pour réécrire state.json
-  pages: write                   # pour publier le dashboard
+  contents: write
+  pages: write
   id-token: write
 
 jobs:
   watch:
     runs-on: ubuntu-latest
+    # Image officielle Playwright : navigateur + libs déjà installés.
+    container: mcr.microsoft.com/playwright/python:v1.60.0-jammy
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          python -m playwright install --with-deps chromium
+      - name: Install Python deps
+        run: pip install -r requirements.txt || pip install --break-system-packages -r requirements.txt
 
       - name: Run Vite Ma Clim
         env:
@@ -54,6 +49,7 @@ jobs:
 
       - name: Persist state
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "vite-ma-clim-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state.json
