@@ -73,7 +73,10 @@ def _detail_pills(detail: str) -> str:
         seg = seg.strip()
         if not seg:
             continue
-        good = any(k in seg for k in ("Available", "InStock", "achetable"))
+        sl = seg.lower()
+        neg = ("\u2717" in seg) or any(k in sl for k in ("rupture", "indisponible", "inconnu"))
+        good = (not neg) and (("\u2713" in seg) or any(k in sl for k in
+                ("pi\u00e8ce", "en stock", "achetable", "available", "instock", "drive")))
         cls = "tag tag--good" if good else "tag tag--mut"
         out.append(f'<span class="{cls}">{html.escape(seg)}</span>')
     return f'<div class="tags">{"".join(out)}</div>'

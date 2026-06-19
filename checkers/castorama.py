@@ -1,30 +1,24 @@
-"""Checker Castorama — API internes (Kingfisher), appels PARALLÉLISÉS par lots.
+"""Checker Castorama — API Kingfisher (magasins + stock + click&collect), par lots.
 
-On charge la fiche produit une fois (origine + cookies), puis :
-  1. UN appel page.evaluate qui interroge toutes les villes en parallèle (par
-     lots) -> magasins proches + coordonnées.
-  2. UN appel page.evaluate qui interroge la dispo de tous les magasins en
-     parallèle (par lots) via l'API same-origin fulfilment-options.
-
-La parallélisation par lots garde une charge raisonnable tout en divisant le
-temps par ~10 vs. des appels séquentiels.
+L'API /v1/mobile/stores/CAFR (include=clickAndCollect,stock&filter[ean]=…) renvoie,
+pour chaque magasin proche, ses coordonnées ET le stock du produit :
+  - attributes.stock.products[].quantity / stockLevel (InStock / LowStock / OutOfStock)
+  - attributes.clickAndCollect.products[].availability (Available / NotAvailable)
+Un seul lot d'appels par zone suffit donc — plus besoin de l'API fulfilment-options.
 """
 from __future__ import annotations
 
-import json
 import math
 
 from models import Availability, IN_STOCK, OUT_OF_STOCK, UNKNOWN
 from .base import Checker, log
 
-AVAILABLE = "Available"
-STORES_BATCH = 8       # villes interrogées simultanément
-FULFIL_BATCH = 12      # magasins interrogés simultanément
+STORES_BATCH = 8
 
 ATMOSPHERE_AUTH = ("Atmosphere atmosphere_app_id="
                    "kingfisher-o4ITR0sWAyCVQBraQf4Es61jHV3dN4oO9UwJQMrS")
 
-# --- JS : magasins proches de chaque (lat,lon), en parallèle par lots --------
+# Magasins proches de chaque (lat,lon) AVEC stock + click&collect, par lots.
 _STORES_BATCH_JS = """
 async ([ean, auth, latlons, batchSize]) => {
   async function inBatches(items, size, fn) {
@@ -34,7 +28,7 @@ async ([ean, auth, latlons, batchSize]) => {
     }
     return out;
   }
-  function extract(j) {
+  function extract(j, ean) {
     const out = [];
     for (const s of ((j && j.data) || [])) {
       if (s.type !== 'store') continue;
@@ -43,12 +37,18 @@ async ([ean, auth, latlons, batchSize]) => {
       const c = geo.coordinates || {};
       let lat = (c.latitude != null ? c.latitude : geo.latitude);
       let lon = (c.longitude != null ? c.longitude : geo.longitude);
+      let qty = null, level = null;
+      const sp = ((a.stock || {}).products) || [];
+      for (const p of sp) { if (!ean || p.ean === ean) { qty = (p.quantity != null ? p.quantity : null); level = p.stockLevel || null; break; } }
+      let cc = null;
+      const ccp = ((a.clickAndCollect || {}).products) || [];
+      for (const p of ccp) { if (!ean || p.ean === ean) { cc = p.availability || null; break; } }
+      if (cc == null) cc = ((a.clickAndCollect || {}).summary || {}).availability || null;
       out.push({
-        id: String(s.id),
-        name: a.name || st.name || null,
+        id: String(s.id), name: a.name || st.name || null,
         cp: ((geo.postalCode || '') + '').trim(),
-        lat: (lat != null ? Number(lat) : null),
-        lon: (lon != null ? Number(lon) : null)
+        lat: (lat != null ? Number(lat) : null), lon: (lon != null ? Number(lon) : null),
+        qty: qty, level: level, cc: cc
       });
     }
     return out;
@@ -61,32 +61,8 @@ async ([ean, auth, latlons, batchSize]) => {
         headers: {'accept': 'application/json', 'authorization': auth}});
       if (r.status !== 200) return {status: r.status, stores: []};
       const j = await r.json();
-      return {status: 200, stores: extract(j)};
+      return {status: 200, stores: extract(j, ean)};
     } catch (e) { return {status: -1, stores: [], error: String(e)}; }
-  });
-}
-"""
-
-# --- JS : dispo par magasin (same-origin), en parallèle par lots -------------
-_FULFILMENT_BATCH_JS = """
-async ([ean, pairs, batchSize]) => {
-  async function inBatches(items, size, fn) {
-    const out = [];
-    for (let i = 0; i < items.length; i += size) {
-      out.push(...await Promise.all(items.slice(i, i + size).map(fn)));
-    }
-    return out;
-  }
-  return await inBatches(pairs, batchSize, async (p) => {
-    const sid = p[0], cp = p[1];
-    const u = `/casto-browse-mfe/api/fulfilment-options?compositeOfferId=${ean}`
-            + `&storeId=${sid}&postalCode=${cp}`;
-    try {
-      const r = await fetch(u, {credentials: 'include',
-        headers: {'accept': 'application/json'}});
-      if (!r.ok) return {sid: sid, __error: r.status};
-      return {sid: sid, data: await r.json()};
-    } catch (e) { return {sid: sid, __error: String(e)}; }
   });
 }
 """
@@ -118,7 +94,6 @@ class CastoramaChecker(Checker):
         ean = str(product["ref"]).split("_")[0]
         label = product.get("label", ean)
         url = product["url"]
-
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=45000)
             page.wait_for_timeout(1200)
@@ -132,28 +107,14 @@ class CastoramaChecker(Checker):
             return [self._mk(label, ean, "en-ligne", "Castorama (aucun magasin)",
                              "", UNKNOWN, "API magasins sans résultat", url)]
 
-        # Dispo de tous les magasins en parallèle (par lots).
-        pairs = [[sid, s["cp"] or ""] for sid, s in stores.items()]
-        try:
-            fres = page.evaluate(_FULFILMENT_BATCH_JS, [ean, pairs, FULFIL_BATCH])
-        except Exception as e:
-            log(f"Castorama: fulfilment batch KO: {e}")
-            fres = []
-        by_sid = {}
-        for r in fres:
-            sid = str(r.get("sid"))
-            if r.get("__error") is not None:
-                by_sid[sid] = (UNKNOWN, f"API KO ({r.get('__error')})")
-            else:
-                by_sid[sid] = self._parse_fulfilment(r.get("data"))
-
-        log(f"Castorama: {len(stores)} magasin(s), dispo récupérée pour {len(by_sid)}.")
-        out = []
+        out, n_in = [], 0
         for sid, s in stores.items():
-            status, detail = by_sid.get(sid, (UNKNOWN, "pas de réponse"))
-            out.append(self._mk(label, ean, f"casto-{sid}",
-                                s["name"] or f"Magasin {sid}", s["city"],
-                                status, detail, url, s["distance"], s["lat"], s["lon"]))
+            status, detail = self._stock_detail(s.get("qty"), s.get("level"), s.get("cc"))
+            if status == IN_STOCK:
+                n_in += 1
+            out.append(self._mk(label, ean, f"casto-{sid}", s["name"] or f"Magasin {sid}",
+                                s["city"], status, detail, url, s["distance"], s["lat"], s["lon"]))
+        log(f"Castorama: {len(stores)} magasin(s), {n_in} avec stock.")
         return out
 
     def _collect_stores(self, page, ean, zones) -> dict:
@@ -182,8 +143,9 @@ class CastoramaChecker(Checker):
                 if hlat is not None and s.get("lat") is not None:
                     dist = round(_haversine_km(hlat, hlon, s["lat"], s["lon"]), 1)
                 entry = {"name": s.get("name"), "cp": (s.get("cp") or ""),
-                         "lat": s.get("lat"), "lon": s.get("lon"),
-                         "distance": dist, "city": name}
+                         "lat": s.get("lat"), "lon": s.get("lon"), "distance": dist,
+                         "city": name, "qty": s.get("qty"), "level": s.get("level"),
+                         "cc": s.get("cc")}
                 prev = stores.get(sid)
                 if prev is None or (entry["distance"] or 1e9) < (prev["distance"] or 1e9):
                     stores[sid] = entry
@@ -191,27 +153,16 @@ class CastoramaChecker(Checker):
         return stores
 
     @staticmethod
-    def _parse_fulfilment(data):
-        if not isinstance(data, dict):
-            return UNKNOWN, "réponse inattendue"
-        try:
-            attrs = data["data"][0]["attributes"]
-        except (KeyError, IndexError, TypeError):
-            return UNKNOWN, "réponse inattendue"
-        cc = (attrs.get("clickAndCollectStorePick") or {}).get("availability")
-        instore = (attrs.get("inStore") or {}).get("availability")
-        home = (attrs.get("homeDelivery") or {}).get("availability")
-        bits = []
-        if cc:
-            bits.append(f"retrait:{cc}")
-        if instore:
-            bits.append(f"magasin:{instore}")
-        if home:
-            bits.append(f"livraison:{home}")
-        detail = " · ".join(bits) or "—"
-        if cc == AVAILABLE or instore in ("InStock", "Available"):
-            return IN_STOCK, detail
-        return OUT_OF_STOCK, detail
+    def _stock_detail(qty, level, cc):
+        cc_ok = cc == "Available"
+        if isinstance(qty, int) and qty > 0:
+            unit = "pièce" if qty == 1 else "pièces"
+            base = "Stock limité" if level == "LowStock" else "Stock magasin"
+            bits = [f"{base} : {qty} {unit}", "Retrait 2h ✓" if cc_ok else "Retrait 2h ✗"]
+            return IN_STOCK, " · ".join(bits)
+        if qty == 0 or level == "OutOfStock":
+            return OUT_OF_STOCK, "Rupture en magasin"
+        return UNKNOWN, "stock inconnu"
 
     @staticmethod
     def _mk(label, ean, store_key, store_name, city, status, detail, url,
