@@ -64,8 +64,25 @@ retailers:
         label: "Midea PortaSplit 3500W (Castorama)"
         url: "https://www.castorama.fr/climatiseur-portasplit-midea-reversible-3500w/8431312260509_CAFR.prd"
 
-  # Pour ajouter Leroy Merlin, Darty, ManoMano... : créer checkers/<nom>.py
-  # sur le modèle des deux autres, puis l'enregistrer dans checkers/__init__.py.
+  optimea:
+    enabled: true
+    products:
+      - ref: "MMCS-12HRN8-QRD0"
+        label: "Midea PortaSplit (Optimea — officiel)"
+        url: "https://www.optimea.fr/product/climatiseur-split-mobile-midea/"
+
+  leroymerlin:
+    # EXPERIMENTAL : Leroy Merlin est protege par DataDome. Si les logs affichent
+    # "bloque DataDome", mets enabled: false (l'IP du cloud peut etre filtree).
+    enabled: true
+    products:
+      - ref: "93857579"
+        label: "Midea PortaSplit (Leroy Merlin)"
+        url: "https://www.leroymerlin.fr/produits/climatiseur-split-mobile-reversible-portasplit-midea-par-optimea-93857579.html"
+
+  # Pour ajouter Darty, ManoMano... : créer checkers/<nom>.py
+  # sur le modèle des autres, puis l'enregistrer dans checkers/__init__.py.
+  # (Leroy Merlin / Bricoman = protégés par DataDome -> non exploitables.)
 
 # ---------------------------------------------------------------------
 # Notifications. Active au moins un canal.
