@@ -10,9 +10,25 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # pragma: no cover
+    ZoneInfo = None
+
 from models import Availability, IN_STOCK, OUT_OF_STOCK
 
 APP_NAME = "Vite Ma Clim"
+
+
+def _now_paris() -> str:
+    """Horodatage en heure de Paris (été/hiver gérés), repli UTC si besoin."""
+    if ZoneInfo is not None:
+        try:
+            p = datetime.now(ZoneInfo("Europe/Paris"))
+            return p.strftime("%d/%m/%Y à %H:%M") + " (heure de Paris)"
+        except Exception:
+            pass
+    return datetime.now(timezone.utc).strftime("%d/%m/%Y à %H:%M UTC")
 
 
 def _dist(r: Availability) -> str:
@@ -119,7 +135,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     results = sorted(results, key=_sort_key)
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
     n_total = len(results)
-    now = datetime.now(timezone.utc).strftime("%d/%m/%Y à %H:%M UTC")
+    now = _now_paris()
     map_html = _map_section(results, home)
     cards = "\n".join(_card(r) for r in results) or '<p class="empty">Aucune donnée.</p>'
 
