@@ -42,17 +42,29 @@ class StateStore:
         """
         to_notify: list[Availability] = []
         for r in results:
-            prev = self.previous_status(r.key)
-            if r.status == IN_STOCK and prev != IN_STOCK:
-                to_notify.append(r)
-            # On mémorise toujours le dernier statut connu.
+            prev_entry = self._data.get(r.key, {})
+            notified = bool(prev_entry.get("notified", False))
+            if r.status == IN_STOCK:
+                # À notifier tant qu'on n'a pas confirmé un envoi réussi.
+                if not notified:
+                    to_notify.append(r)
+            else:
+                # Hors stock : on réarme pour notifier à la prochaine dispo.
+                notified = False
             self._data[r.key] = {
                 "status": r.status,
                 "detail": r.detail,
                 "store_name": r.store_name,
                 "checked_at": r.checked_at,
+                "notified": notified,
             }
         return to_notify
+
+    def mark_notified(self, keys) -> None:
+        """À appeler APRÈS un envoi réussi : fige les magasins comme notifiés."""
+        for k in keys:
+            if k in self._data:
+                self._data[k]["notified"] = True
 
     # ------------------------------------------------------------------
     # Surveillance de l'état de marche des enseignes (« alerte panne »).
