@@ -27,6 +27,7 @@ class Availability:
     lat: float | None = None  # coordonnées du point de vente (pour la carte)
     lon: float | None = None
     quantity: int | None = None  # quantité en stock (Castorama) si connue
+    restock: bool = False  # transitoire : True si la notif correspond à une hausse (réassort)
     checked_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
