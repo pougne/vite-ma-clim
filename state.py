@@ -43,28 +43,53 @@ class StateStore:
         to_notify: list[Availability] = []
         for r in results:
             prev_entry = self._data.get(r.key, {})
-            notified = bool(prev_entry.get("notified", False))
+            notified = bool(prev_entry.get("notified", False))      # enseignes sans quantité
+            wm = int(prev_entry.get("notified_qty", 0))             # seuil quantité (Castorama)
+            qty = r.quantity
+
             if r.status == IN_STOCK:
-                # À notifier tant qu'on n'a pas confirmé un envoi réussi.
-                if not notified:
-                    to_notify.append(r)
+                if qty is None:
+                    # Boulanger / Optimea : pas de quantité -> transition booléenne.
+                    if not notified:
+                        to_notify.append(r)
+                else:
+                    # Castorama : on notifie sur toute HAUSSE de quantité
+                    # (1re dispo si seuil=0, sinon réassort/livraison).
+                    if qty > wm:
+                        r.restock = wm > 0
+                        to_notify.append(r)
+                        # on n'avance PAS le seuil ici : mark_notified le fera
+                        # après un envoi réussi (sinon on retente au passage suivant).
+                    elif qty < wm:
+                        # baisse (achats) : on abaisse le seuil, sans notifier,
+                        # pour qu'un rebond ultérieur compte comme une livraison.
+                        wm = qty
             else:
-                # Hors stock : on réarme pour notifier à la prochaine dispo.
+                # Rupture -> on réarme tout (la prochaine dispo re-notifiera).
                 notified = False
+                wm = 0
+
             self._data[r.key] = {
                 "status": r.status,
                 "detail": r.detail,
                 "store_name": r.store_name,
                 "checked_at": r.checked_at,
                 "notified": notified,
+                "notified_qty": wm,
             }
         return to_notify
 
-    def mark_notified(self, keys) -> None:
-        """À appeler APRÈS un envoi réussi : fige les magasins comme notifiés."""
-        for k in keys:
-            if k in self._data:
-                self._data[k]["notified"] = True
+    def mark_notified(self, results) -> None:
+        """À appeler APRÈS un envoi réussi. Fige le seuil au niveau notifié
+        (quantité pour Castorama, booléen pour les autres)."""
+        for r in results:
+            e = self._data.get(r.key)
+            if not e:
+                continue
+            if r.quantity is None:
+                e["notified"] = True
+            else:
+                e["notified_qty"] = int(r.quantity)
 
     # ------------------------------------------------------------------
     # Surveillance de l'état de marche des enseignes (« alerte panne »).
