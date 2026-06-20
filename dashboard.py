@@ -82,7 +82,69 @@ def _detail_pills(detail: str) -> str:
     return f'<div class="tags">{"".join(out)}</div>'
 
 
-def _card(r: Availability) -> str:
+def _fmt_ts(ts) -> str:
+    """Epoch -> 'HHhMM le JJ/MM' en heure de Paris."""
+    from datetime import datetime
+    try:
+        try:
+            from zoneinfo import ZoneInfo
+            dt = datetime.fromtimestamp(int(ts), ZoneInfo("Europe/Paris"))
+        except Exception:
+            dt = datetime.utcfromtimestamp(int(ts))
+        return dt.strftime("%Hh%M le %d/%m")
+    except Exception:
+        return ""
+
+
+def _sparkline(series) -> str:
+    pts = [(int(t), int(v)) for t, v in (series or []) if v is not None]
+    if len(pts) < 2:
+        return ""
+    pts = pts[-40:]
+    ts0, ts1 = pts[0][0], pts[-1][0]
+    vmax = max(v for _, v in pts) or 1
+    span = (ts1 - ts0) or 1
+    W, H = 84, 22
+    coords = " ".join(
+        f"{(t - ts0) / span * (W - 2) + 1:.1f},{H - 2 - (v / vmax) * (H - 4):.1f}"
+        for t, v in pts)
+    return (f'<svg class="spark" viewBox="0 0 {W} {H}" width="{W}" height="{H}">'
+            f'<polyline points="{coords}" fill="none" stroke="#4a9e34" '
+            'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>')
+
+
+def _national_chart(series) -> str:
+    pts = [(int(t), int(v)) for t, v in (series or []) if v is not None]
+    cur = pts[-1][1] if pts else 0
+    head = ('<div class="natchart"><h2>Stock cumulé Castorama '
+            '<span class="natnote">(magasins suivis)</span></h2>')
+    if len(pts) < 2:
+        return (head + f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}</div>'
+                '<div class="natsub">Historique en cours de constitution…</div></div>')
+    if len(pts) > 250:
+        step = len(pts) / 250.0
+        pts = [pts[int(i * step)] for i in range(250)] + [pts[-1]]
+    ts0, ts1 = pts[0][0], pts[-1][0]
+    vmax = max(v for _, v in pts) or 1
+    vmin = min(v for _, v in pts)
+    span = (ts1 - ts0) or 1
+    W, H, pad = 1000, 120, 6
+    def X(t): return pad + (t - ts0) / span * (W - 2 * pad)
+    def Y(v): return H - pad - (v / vmax) * (H - 2 * pad - 14)
+    line = " ".join(f"{X(t):.1f},{Y(v):.1f}" for t, v in pts)
+    area = f"{pad:.0f},{H - pad} " + line + f" {W - pad},{H - pad}"
+    return (
+        head +
+        f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}'
+        f'<span class="natrange">min {vmin} · max {vmax}</span></div>'
+        f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" class="natsvg">'
+        f'<polygon points="{area}" fill="rgba(85,97,217,.12)"/>'
+        f'<polyline points="{line}" fill="none" stroke="#5561d9" stroke-width="2" '
+        'stroke-linejoin="round" stroke-linecap="round"/></svg>'
+        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)}</div></div>')
+
+
+def _card(r: Availability, hinfo: dict | None = None) -> str:
     ok = r.status == IN_STOCK
     if ok:
         statetag = '<span class="state state--ok">Disponible</span>'
@@ -100,6 +162,11 @@ def _card(r: Availability) -> str:
     bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
             else "b-optimea" if rl.startswith("optimea") else "b-other")
     geo = f' data-lat="{r.lat}" data-lon="{r.lon}"' if (r.lat is not None and r.lon is not None) else ""
+    extra = ""
+    if hinfo:
+        if ok and hinfo.get("first_seen"):
+            extra += f'<div class="seen">en stock depuis {_fmt_ts(hinfo["first_seen"])}</div>'
+        extra += _sparkline(hinfo.get("series"))
     return (
         f'<article class="card{" card--ok" if ok else ""}" data-ok="{1 if ok else 0}"{geo}>'
         f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>'
@@ -108,6 +175,7 @@ def _card(r: Availability) -> str:
         f'<div class="card-city">{html.escape(r.store_city or "")}</div>'
         f'{statetag}'
         f'{_detail_pills(r.detail)}'
+        f'{extra}'
         f'<div class="card-btns">{"".join(btns)}</div>'
         f'</article>'
     )
@@ -246,13 +314,16 @@ def _map_section(results, home) -> str:
     return bar + '<div id="map"></div>' + script
 
 
-def render(results: list[Availability], out_path: str | Path, home: dict | None = None) -> Path:
+def render(results: list[Availability], out_path: str | Path, home: dict | None = None,
+           history: dict | None = None) -> Path:
     results = sorted(results, key=_sort_key)
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
     n_total = len(results)
     now = _now_paris()
+    hist_stores = (history or {}).get("stores", {})
     map_html = _map_section(results, home)
-    cards = "\n".join(_card(r) for r in results) or '<p class="empty">Aucune donnée.</p>'
+    nat_html = _national_chart((history or {}).get("national", []))
+    cards = "\n".join(_card(r, hist_stores.get(r.key)) for r in results) or '<p class="empty">Aucune donnée.</p>'
 
     headline = (f"{n_dispo} point{'s' if n_dispo > 1 else ''} de vente "
                 f"propose{'nt' if n_dispo > 1 else ''} le Midea PortaSplit&nbsp;!"
@@ -342,6 +413,16 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .geo-hint b {{ color:var(--txt); }}
   .geo-reset {{ color:var(--primary); font-size:13px; text-decoration:none; margin-left:auto; }}
   .geo-reset:hover {{ text-decoration:underline; }}
+  .natchart {{ max-width:1100px; margin:18px auto 0; padding:14px 18px; background:#fff;
+               border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 4px rgba(20,23,40,.05); }}
+  .natchart h2 {{ font-size:13px; color:var(--mut); margin:0; font-weight:700; }}
+  .natchart .natnote {{ font-weight:500; }}
+  .natchart .big {{ font-size:26px; font-weight:800; margin:2px 0 6px; }}
+  .natchart .natrange {{ font-size:12px; font-weight:600; color:var(--mut); margin-left:10px; }}
+  .natsvg {{ width:100%; height:120px; display:block; }}
+  .natsub {{ color:var(--mut); font-size:11px; margin-top:4px; }}
+  .seen {{ color:var(--success-dark); font-size:10.5px; font-weight:700; }}
+  .spark {{ display:block; }}
 </style></head>
 <body>
 <div class="topbar"><div class="in">
@@ -359,6 +440,8 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   <div class="chip {'go' if n_dispo else ''}"><b>{n_dispo}</b>disponible{'s' if n_dispo != 1 else ''}</div>
   <div class="chip"><b>≈ 2 h</b>autour de chez vous & +</div>
 </div>
+
+{nat_html}
 
 {map_html}
 
