@@ -21,19 +21,33 @@ def _by_distance(results: list[Availability]):
         x.retailer, x.store_city or "", x.store_name))
 
 
+def _place(r: Availability) -> str:
+    """Nom du point de vente sans doubler l'enseigne (ex. 'Castorama Limoges' -> 'Limoges')."""
+    name = (r.store_name or "").strip()
+    if r.retailer and name.lower().startswith(r.retailer.lower()):
+        name = name[len(r.retailer):].strip(" -—")
+    return name or (r.store_city or r.retailer or "")
+
+
 def _format_lines(results: list[Availability]) -> str:
     lines = []
+    urls = []
     for r in _by_distance(results):
-        loc = (f"{r.store_name} ({r.store_city})"
-               if r.store_city and r.store_city != "—" else r.store_name)
-        head = f"• {r.retailer} — {loc}"
-        if getattr(r, "restock", False):
-            head = f"🔁 {r.retailer} — {loc} · RÉASSORT"
+        head = f"• {r.retailer} {_place(r)}".rstrip()
         d = _km(r)
         if d:
             head += f" · {d}"
-        lines.append(f"{head}\n  {r.detail or 'dispo'}\n  {r.url}")
-    return "\n".join(lines)
+        if getattr(r, "restock", False):
+            head += " · 🔁 RÉASSORT"
+        lines.append(f"{head}\n  {r.detail or 'dispo'}")
+        if r.url:
+            urls.append(r.url)
+    body = "\n".join(lines)
+    # Lien(s) produit affiché(s) une seule fois en bas : l'URL est identique pour
+    # tous les magasins d'une enseigne, inutile de la répéter à chaque ligne.
+    for u in dict.fromkeys(urls):          # dédoublonne en gardant l'ordre
+        body += f"\n→ {u}"
+    return body
 
 
 def notify_email(cfg: dict, results: list[Availability]) -> None:
@@ -70,14 +84,13 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     n = len(res)
     topic_url = cfg["topic_url"].rstrip("/")
 
-    # Titre : indique directement l'enseigne / la ville la plus proche.
-    where = primary.store_city if (primary.store_city and primary.store_city != "-") else primary.retailer
+    # Titre : enseigne + vraie ville la plus proche (pas la zone de recherche).
     km = _km(primary)
+    near = f"{primary.retailer} {_place(primary)}".rstrip() + (f" · {km}" if km else "")
     if n == 1:
-        title = f"PortaSplit dispo - {primary.retailer} {primary.store_city or ''}".strip()
+        title = f"PortaSplit dispo · {near}"
     else:
-        near = f"{primary.retailer} {where}".strip() + (f" {km}" if km else "")
-        title = f"{n} dispos Midea PortaSplit - au plus pres: {near}"
+        title = f"{n} dispos PortaSplit · au plus près : {near}"
 
     # Boutons tappables : fiche produit (+ itineraire si on a les coordonnees).
     # NB: l'en-tete ntfy "Actions" separe les champs par des virgules -> on
