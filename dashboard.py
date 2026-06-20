@@ -319,6 +319,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     results = sorted(results, key=_sort_key)
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
     n_total = len(results)
+    total_pieces = sum(r.quantity for r in results if r.quantity)
     now = _now_paris()
     hist_stores = (history or {}).get("stores", {})
     map_html = _map_section(results, home)
@@ -365,9 +366,9 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .hero p {{ margin:0; color:var(--mut); font-size:15px; }}
   .hero h1 .hl {{ color:var(--success-dark); }}
   .chips {{ display:flex; gap:10px; max-width:1100px; margin:18px auto 0; padding:0 20px; flex-wrap:wrap; }}
-  .chip {{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 16px;
-           font-size:13px; color:var(--mut); box-shadow:0 1px 2px rgba(20,23,40,.04); }}
-  .chip b {{ display:block; font-size:20px; color:var(--txt); }}
+  .chip {{ flex:1 1 150px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 16px;
+           font-size:13px; line-height:1.25; color:var(--mut); box-shadow:0 1px 2px rgba(20,23,40,.04); }}
+  .chip b {{ display:block; font-size:20px; color:var(--txt); line-height:1.1; margin-bottom:2px; }}
   .chip.go b {{ color:var(--success-dark); }}
   #map {{ height:360px; max-width:1100px; margin:20px auto 0; border-radius:18px;
           border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,23,40,.05); }}
@@ -423,6 +424,17 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .natsub {{ color:var(--mut); font-size:11px; margin-top:4px; }}
   .seen {{ color:var(--success-dark); font-size:10.5px; font-weight:700; }}
   .spark {{ display:block; }}
+  @media (max-width:480px) {{
+    .hero {{ padding:22px 16px 6px; }}
+    .hero h1 {{ font-size:21px; }}
+    .hero p {{ font-size:14px; }}
+    .chips {{ gap:8px; padding:0 16px; flex-wrap:nowrap; }}
+    .chip {{ flex:1 1 0; min-width:0; padding:10px 9px; font-size:11px; border-radius:12px; }}
+    .chip b {{ font-size:18px; }}
+    .natchart {{ margin:14px 16px 0; padding:12px 14px; }}
+    .natchart .big {{ font-size:22px; }}
+    .grid {{ padding:0 16px; gap:10px; grid-template-columns:1fr 1fr; }}
+  }}
 </style></head>
 <body>
 <div class="topbar"><div class="in">
@@ -436,9 +448,9 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
 </div>
 
 <div class="chips">
-  <div class="chip"><b>{n_total}</b>points de vente suivis</div>
+  <div class="chip"><b>{n_total}</b>magasins suivis</div>
   <div class="chip {'go' if n_dispo else ''}"><b>{n_dispo}</b>disponible{'s' if n_dispo != 1 else ''}</div>
-  <div class="chip"><b>≈ 2 h</b>autour de chez vous & +</div>
+  <div class="chip {'go' if total_pieces else ''}"><b>{total_pieces}</b>pièce{'s' if total_pieces != 1 else ''} en stock</div>
 </div>
 
 {nat_html}
