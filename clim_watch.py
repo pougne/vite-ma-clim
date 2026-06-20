@@ -119,7 +119,7 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
     if to_notify:
         try:
             notify.dispatch(cfg["notifications"], to_notify)
-            state.mark_notified([r.key for r in to_notify])
+            state.mark_notified(to_notify)
             state.save()
         except Exception as e:
             print(f"[notify] échec dispatch, re-essai au prochain passage: {e}")
