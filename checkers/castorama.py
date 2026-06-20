@@ -113,7 +113,8 @@ class CastoramaChecker(Checker):
             if status == IN_STOCK:
                 n_in += 1
             out.append(self._mk(label, ean, f"casto-{sid}", s["name"] or f"Magasin {sid}",
-                                s["city"], status, detail, url, s["distance"], s["lat"], s["lon"]))
+                                s["city"], status, detail, url, s["distance"], s["lat"], s["lon"],
+                                quantity=s.get("qty")))
         log(f"Castorama: {len(stores)} magasin(s), {n_in} avec stock.")
         return out
 
@@ -166,10 +167,10 @@ class CastoramaChecker(Checker):
 
     @staticmethod
     def _mk(label, ean, store_key, store_name, city, status, detail, url,
-            distance=None, lat=None, lon=None):
+            distance=None, lat=None, lon=None, quantity=None):
         return Availability(
             retailer="Castorama", product_label=label, product_ref=ean,
             store_key=store_key, store_name=store_name, store_city=city,
             status=status, detail=detail, url=url, distance_km=distance,
-            lat=lat, lon=lon,
+            lat=lat, lon=lon, quantity=quantity,
         )
