@@ -105,22 +105,39 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
 
     to_notify = state.update(results)
     broken, recovered = state.health_update(expected_names, results)
+    national_total = state.history_update(results, int(time.time()))
     state.save()
-
-    dash_path = HERE / cfg.get("output", {}).get("dashboard", "dashboard.html")
-    dashboard.render(results, dash_path, home=cfg.get("home"))
 
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
     print(f"[pass] {len(results)} lignes | {n_dispo} dispo | "
-          f"{len(to_notify)} nouvelle(s) -> notif")
-    print(f"[pass] dashboard: {dash_path}")
+          f"{len(to_notify)} à notifier")
+    print(f"[pass] stock national cumulé: {national_total} pièce(s)")
 
+    # Notifs AVANT le rendu. On ne fige "notifié" qu'après un envoi réussi :
+    # si l'envoi échoue, le magasin reste à re-notifier au passage suivant
+    # (plus aucune dispo perdue en silence).
     if to_notify:
-        notify.dispatch(cfg["notifications"], to_notify)
+        try:
+            notify.dispatch(cfg["notifications"], to_notify)
+            state.mark_notified([r.key for r in to_notify])
+            state.save()
+        except Exception as e:
+            print(f"[notify] échec dispatch, re-essai au prochain passage: {e}")
     if broken or recovered:
         if broken:
             print(f"[health] enseigne(s) muette(s): {broken}")
-        notify.notify_health(cfg["notifications"], broken, recovered)
+        try:
+            notify.notify_health(cfg["notifications"], broken, recovered)
+        except Exception as e:
+            print(f"[notify] échec health: {e}")
+
+    # Rendu en dernier et protégé : une erreur de rendu ne doit JAMAIS bloquer les notifs.
+    try:
+        dash_path = HERE / cfg.get("output", {}).get("dashboard", "dashboard.html")
+        dashboard.render(results, dash_path, home=cfg.get("home"), history=state.history())
+        print(f"[pass] dashboard: {dash_path}")
+    except Exception as e:
+        print(f"[dashboard] erreur de rendu (sans impact sur les notifs): {e}")
 
 
 def main() -> int:
