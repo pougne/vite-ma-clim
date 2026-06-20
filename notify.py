@@ -4,6 +4,7 @@ from __future__ import annotations
 import smtplib
 import ssl
 import urllib.request
+import urllib.error
 from email.message import EmailMessage
 
 from models import Availability
@@ -79,24 +80,40 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
         title = f"{n} dispos Midea PortaSplit - au plus pres: {near}"
 
     # Boutons tappables : fiche produit (+ itineraire si on a les coordonnees).
+    # NB: l'en-tete ntfy "Actions" separe les champs par des virgules -> on
+    # encode la virgule des coordonnees Google Maps en %2C, sinon ntfy renvoie 400.
     actions = [f"view, Voir la fiche, {primary.url}, clear=true"]
     if primary.lat is not None and primary.lon is not None:
-        gmaps = f"https://www.google.com/maps/dir/?api=1&destination={primary.lat},{primary.lon}"
+        gmaps = (f"https://www.google.com/maps/dir/?api=1"
+                 f"&destination={primary.lat}%2C{primary.lon}")
         actions.append(f"view, Itineraire, {gmaps}")
+
+    # Les en-tetes HTTP doivent etre encodables en latin-1 ; on neutralise
+    # tout caractere exotique (apostrophe typographique, tiret cadratin, emoji...).
+    def _h(v: str) -> str:
+        return str(v).encode("latin-1", "replace").decode("latin-1")
 
     req = urllib.request.Request(
         topic_url,
         data=_format_lines(res).encode("utf-8"),
         headers={
-            "Title": title,
+            "Title": _h(title),
             "Priority": "high",
             "Tags": "snowflake",
-            "Click": primary.url or topic_url,
-            "Actions": "; ".join(actions[:3]),
+            "Click": _h(primary.url or topic_url),
+            "Actions": _h("; ".join(actions[:3])),
         },
         method="POST",
     )
-    urllib.request.urlopen(req, timeout=15)
+    try:
+        urllib.request.urlopen(req, timeout=15)
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8", "replace")[:300]
+        except Exception:
+            pass
+        raise RuntimeError(f"ntfy HTTP {e.code}: {body}") from e
 
 
 def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> None:
