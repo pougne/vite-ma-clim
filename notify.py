@@ -26,6 +26,8 @@ def _format_lines(results: list[Availability]) -> str:
         loc = (f"{r.store_name} ({r.store_city})"
                if r.store_city and r.store_city != "—" else r.store_name)
         head = f"• {r.retailer} — {loc}"
+        if getattr(r, "restock", False):
+            head = f"🔁 {r.retailer} — {loc} · RÉASSORT"
         d = _km(r)
         if d:
             head += f" · {d}"
