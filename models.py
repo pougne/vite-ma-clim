@@ -26,6 +26,7 @@ class Availability:
     distance_km: float | None = None  # distance depuis "home" (vol d'oiseau)
     lat: float | None = None  # coordonnées du point de vente (pour la carte)
     lon: float | None = None
+    quantity: int | None = None  # quantité en stock (Castorama) si connue
     checked_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
