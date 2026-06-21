@@ -3,7 +3,7 @@
     "status": "unknown",
     "detail": "section dispo introuvable",
     "store_name": "En ligne (livraison/retrait)",
-    "checked_at": "2026-06-21T12:48:02+00:00",
+    "checked_at": "2026-06-21T13:07:59+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -755,7 +755,7 @@
     "status": "out_of_stock",
     "detail": "999 € · rupture",
     "store_name": "En ligne (livraison)",
-    "checked_at": "2026-06-21T12:48:43+00:00",
+    "checked_at": "2026-06-21T13:08:06+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -767,11 +767,11 @@
   },
   "__health__": {
     "Boulanger": {
-      "streak": 52,
+      "streak": 53,
       "alerted": true
     },
     "Castorama": {
-      "streak": 0,
+      "streak": 1,
       "alerted": false
     },
     "Optimea": {
@@ -2416,5 +2416,13 @@
         ]
       }
     }
+  },
+  "Castorama|8431312260509|en-ligne": {
+    "status": "unknown",
+    "detail": "API magasins sans résultat",
+    "store_name": "Castorama (aucun magasin)",
+    "checked_at": "2026-06-21T13:08:04+00:00",
+    "notified": false,
+    "notified_qty": 0
   }
 }
