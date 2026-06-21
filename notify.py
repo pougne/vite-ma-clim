@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import smtplib
 import ssl
+import json
 import urllib.request
 import urllib.error
 from email.message import EmailMessage
@@ -83,39 +84,58 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     primary = res[0]
     n = len(res)
     topic_url = cfg["topic_url"].rstrip("/")
+    base, _, topic = topic_url.rpartition("/")
+    if not base or not topic:
+        raise RuntimeError(f"topic_url invalide: {cfg.get('topic_url')!r}")
 
-    # Titre : enseigne + vraie ville la plus proche (pas la zone de recherche).
+    # Titre : enseigne + vraie ville la plus proche. Publié en JSON (UTF-8),
+    # donc accents et "·" s'affichent correctement (fini les caractères cassés).
     km = _km(primary)
     near = f"{primary.retailer} {_place(primary)}".rstrip() + (f" · {km}" if km else "")
+    restock = bool(getattr(primary, "restock", False))
+
+    # Quantité dans le titre : celle du plus proche (n==1) ou le total (n>1).
     if n == 1:
-        title = f"PortaSplit dispo · {near}"
+        qty = primary.quantity
+        qty_part = f"{qty} pièce{'s' if qty and qty > 1 else ''} · " if qty else ""
+        head = "Réassort" if restock else "PortaSplit dispo"
+        title = f"{head} · {qty_part}{near}"
     else:
-        title = f"{n} dispos PortaSplit · au plus près : {near}"
+        total = sum(r.quantity for r in res if isinstance(r.quantity, int))
+        prefix = "Réassort · " if restock else ""
+        qty_part = f"{total} pièces · " if total else ""
+        title = f"{prefix}{n} dispos · {qty_part}au plus près : {near}"
+    tags = ["arrows_counterclockwise"] if restock else ["snowflake"]
 
-    # Boutons tappables : fiche produit (+ itineraire si on a les coordonnees).
-    # NB: l'en-tete ntfy "Actions" separe les champs par des virgules -> on
-    # encode la virgule des coordonnees Google Maps en %2C, sinon ntfy renvoie 400.
-    actions = [f"view, Voir la fiche, {primary.url}, clear=true"]
+    # Priorité du push : HAUTE (5) si livraison à domicile dispo (en ligne) ou si
+    # le magasin le plus proche est à ~3 h de route ; NORMALE (3) sinon.
+    near_km = cfg.get("high_priority_km", 225)   # ≈ 3 h à ~75 km/h effectifs (route + détours)
+    dists = [r.distance_km for r in res if r.distance_km is not None]
+    has_online = any(r.distance_km is None for r in res)
+    nearest = min(dists) if dists else None
+    priority = 5 if (has_online or (nearest is not None and nearest <= near_km)) else 3
+
+    # Boutons : actions structurées en JSON -> pas de souci de virgule dans l'URL Maps.
+    actions = [{"action": "view", "label": "Voir la fiche",
+                "url": primary.url or topic_url, "clear": True}]
     if primary.lat is not None and primary.lon is not None:
-        gmaps = (f"https://www.google.com/maps/dir/?api=1"
-                 f"&destination={primary.lat}%2C{primary.lon}")
-        actions.append(f"view, Itineraire, {gmaps}")
+        actions.append({"action": "view", "label": "Itinéraire",
+                        "url": f"https://www.google.com/maps/dir/?api=1"
+                               f"&destination={primary.lat},{primary.lon}"})
 
-    # Les en-tetes HTTP doivent etre encodables en latin-1 ; on neutralise
-    # tout caractere exotique (apostrophe typographique, tiret cadratin, emoji...).
-    def _h(v: str) -> str:
-        return str(v).encode("latin-1", "replace").decode("latin-1")
-
+    payload = {
+        "topic": topic,
+        "title": title,
+        "message": _format_lines(res),
+        "tags": tags,
+        "priority": priority,
+        "click": primary.url or topic_url,
+        "actions": actions[:3],
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        topic_url,
-        data=_format_lines(res).encode("utf-8"),
-        headers={
-            "Title": _h(title),
-            "Priority": "high",
-            "Tags": "snowflake",
-            "Click": _h(primary.url or topic_url),
-            "Actions": _h("; ".join(actions[:3])),
-        },
+        base, data=data,
+        headers={"Content-Type": "application/json; charset=utf-8"},
         method="POST",
     )
     try:
