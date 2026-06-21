@@ -35,12 +35,12 @@ def load_config(path: Path) -> dict:
         cfg.setdefault("notifications", {}).setdefault("ntfy", {})
         cfg["notifications"]["ntfy"]["enabled"] = True
         cfg["notifications"]["ntfy"]["topic_url"] = topic
-    hlat, hlon = os.environ.get("VMC_HOME_LAT"), os.environ.get("VMC_HOME_LON")
-    if hlat and hlon:
-        try:
-            cfg["home"] = {"lat": float(hlat), "lon": float(hlon)}
-        except ValueError:
-            pass
+    # NB confidentialité : on n'injecte PAS les vraies coordonnées de domicile.
+    # Le dashboard est public (GitHub Pages) -> tout 'home' fourni ici serait
+    # publié (coordonnées + repère « Chez vous »). On garde donc le placeholder
+    # de config.yaml (Paris) côté serveur ; la vraie position de l'utilisateur
+    # reste uniquement dans son navigateur (localStorage). Distance des notifs
+    # basée sur Paris-centre = écart négligeable (~8 km) pour ce besoin.
     return cfg
 
 
