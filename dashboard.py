@@ -424,6 +424,8 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
                  align-items:center; justify-content:space-between; }}
   .logo {{ font-size:22px; font-weight:800; letter-spacing:-.5px; white-space:nowrap; }}
   .logo .a {{ color:var(--txt); }} .logo .b {{ color:var(--primary); }}
+  .logo-sub {{ color:var(--mut); font-size:10.5px; font-weight:700; letter-spacing:.4px;
+               text-transform:uppercase; margin-top:1px; }}
   .topbar .upd {{ color:var(--mut); font-size:12px; }}
   .hero {{ max-width:1100px; margin:0 auto; padding:30px 20px 8px; }}
   .hero h1 {{ font-size:26px; margin:0 0 6px; font-weight:800; letter-spacing:-.4px; }}
@@ -522,7 +524,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
 </style></head>
 <body>
 <div class="topbar"><div class="in">
-  <div class="logo"><span class="a">Vite Ma </span><span class="b">Clim</span> ❄️</div>
+  <div class="brand"><div class="logo"><span class="a">Vite Ma </span><span class="b">Clim</span> ❄️</div><div class="logo-sub">Midea PortaSplit Tracker</div></div>
   <div class="upd">Mis à jour le {now} · auto 2 min</div>
 </div></div>
 
