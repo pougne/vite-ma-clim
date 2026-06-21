@@ -5,7 +5,7 @@ enseignes (Castorama, Boulanger…), en ligne **et** en magasin dans un rayon
 autour de Paris, puis t'envoie une notification (ntfy/push ou email) dès
 qu'un point de vente passe en stock. Génère aussi un dashboard HTML.
 
-## 1. Installation (sur le Vivobook)
+## 1. Installation
 
 ```powershell
 cd clim-watch
