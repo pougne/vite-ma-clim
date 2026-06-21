@@ -358,7 +358,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .topbar {{ background:#fff; border-bottom:1px solid var(--line); }}
   .topbar .in {{ max-width:1100px; margin:0 auto; padding:16px 20px; display:flex;
                  align-items:center; justify-content:space-between; }}
-  .logo {{ font-size:22px; font-weight:800; letter-spacing:-.5px; }}
+  .logo {{ font-size:22px; font-weight:800; letter-spacing:-.5px; white-space:nowrap; }}
   .logo .a {{ color:var(--txt); }} .logo .b {{ color:var(--primary); }}
   .topbar .upd {{ color:var(--mut); font-size:12px; }}
   .hero {{ max-width:1100px; margin:0 auto; padding:30px 20px 8px; }}
@@ -425,6 +425,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .seen {{ color:var(--success-dark); font-size:10.5px; font-weight:700; }}
   .spark {{ display:block; }}
   @media (max-width:480px) {{
+    .topbar .in {{ flex-direction:column; align-items:flex-start; gap:2px; padding:12px 16px; }}
     .hero {{ padding:22px 16px 6px; }}
     .hero h1 {{ font-size:21px; }}
     .hero p {{ font-size:14px; }}
