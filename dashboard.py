@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -128,6 +129,7 @@ def _national_chart(series) -> str:
     vmax = max(v for _, v in pts) or 1
     vmin = min(v for _, v in pts)
     span = (ts1 - ts0) or 1
+    ups = sum(1 for i in range(1, len(pts)) if pts[i][1] - pts[i-1][1] >= 2)
     W, H, pad = 1000, 120, 6
     def X(t): return pad + (t - ts0) / span * (W - 2 * pad)
     def Y(v): return H - pad - (v / vmax) * (H - 2 * pad - 14)
@@ -141,10 +143,43 @@ def _national_chart(series) -> str:
         f'<polygon points="{area}" fill="rgba(85,97,217,.12)"/>'
         f'<polyline points="{line}" fill="none" stroke="#5561d9" stroke-width="2" '
         'stroke-linejoin="round" stroke-linecap="round"/></svg>'
-        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)}</div></div>')
+        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)} · {ups} réassort(s) détecté(s)</div></div>')
 
 
-def _card(r: Availability, hinfo: dict | None = None) -> str:
+def _trend(series) -> int:
+    """+1 si la dernière variation de stock est une hausse, -1 baisse, 0 stable."""
+    pts = [v for _, v in (series or []) if v is not None]
+    if len(pts) < 2:
+        return 0
+    return 1 if pts[-1] > pts[-2] else (-1 if pts[-1] < pts[-2] else 0)
+
+
+def _eta(series) -> str:
+    """Estime le temps avant rupture si le stock baisse (sur les derniers points)."""
+    pts = [(int(t), int(v)) for t, v in (series or []) if v is not None]
+    if len(pts) < 2:
+        return ""
+    cur = pts[-1][1]
+    if cur <= 0:
+        return ""
+    recent = pts[-5:]
+    t0, v0 = recent[0]
+    t1, v1 = recent[-1]
+    dt_h = (t1 - t0) / 3600.0
+    if dt_h <= 0:
+        return ""
+    rate = (v0 - v1) / dt_h            # pièces perdues par heure
+    if rate <= 0.1:                    # pas vraiment en baisse
+        return ""
+    eta = cur / rate
+    if eta < 1:
+        return "rupture imminente"
+    if eta < 48:
+        return f"épuisé dans ~{round(eta)} h"
+    return f"épuisé dans ~{round(eta / 24)} j"
+
+
+def _card(r: Availability, hinfo: dict | None = None, now_ts: int | None = None) -> str:
     ok = r.status == IN_STOCK
     if ok:
         statetag = '<span class="state state--ok">Disponible</span>'
@@ -162,13 +197,27 @@ def _card(r: Availability, hinfo: dict | None = None) -> str:
     bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
             else "b-optimea" if rl.startswith("optimea") else "b-other")
     geo = f' data-lat="{r.lat}" data-lon="{r.lon}"' if (r.lat is not None and r.lon is not None) else ""
-    extra = ""
-    if hinfo:
-        if ok and hinfo.get("first_seen"):
-            extra += f'<div class="seen">en stock depuis {_fmt_ts(hinfo["first_seen"])}</div>'
-        extra += _sparkline(hinfo.get("series"))
+    series = hinfo.get("series") if hinfo else None
+    first_seen = hinfo.get("first_seen") if hinfo else None
+    is_new = bool(ok and first_seen and now_ts and (now_ts - int(first_seen)) <= 3600)
+    is_restock = bool(ok and not is_new and _trend(series) > 0)
+    retrait2h = bool(ok and r.detail and "Retrait 2h \u2713" in r.detail)
+    eta = _eta(series) if ok else ""
+    badges = []
+    if is_new:
+        badges.append('<span class="tag tag--new">\u2728 Nouveau</span>')
+    if is_restock:
+        badges.append('<span class="tag tag--restock">\U0001F501 R\u00e9assort</span>')
+    if retrait2h:
+        badges.append('<span class="tag tag--retrait">\U0001F6D2 Retrait 2h</span>')
+    if eta:
+        badges.append(f'<span class="tag tag--eta">\u23f3 {eta}</span>')
+    extra = ('<div class="badges">' + "".join(badges) + "</div>") if badges else ""
+    if ok and first_seen:
+        extra += f'<div class="seen">en stock depuis {_fmt_ts(first_seen)}</div>'
+    extra += _sparkline(series)
     return (
-        f'<article class="card{" card--ok" if ok else ""}" data-ok="{1 if ok else 0}"{geo}>'
+        f'<article class="card{" card--ok" if ok else ""}{" card--new" if is_new else ""}" data-ok="{1 if ok else 0}"{geo}>'
         f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>'
         f'<span class="km">{dist}</span></div>'
         f'<h3 class="card-title">{html.escape(r.store_name)}</h3>'
@@ -181,13 +230,20 @@ def _card(r: Availability, hinfo: dict | None = None) -> str:
     )
 
 
-def _map_section(results, home) -> str:
-    points = [
-        {"lat": r.lat, "lon": r.lon, "name": r.store_name, "city": r.store_city,
-         "dist": (round(r.distance_km) if r.distance_km is not None else None),
-         "status": r.status, "url": r.url, "detail": r.detail}
-        for r in results if r.lat is not None and r.lon is not None
-    ]
+def _map_section(results, home, hist_stores=None) -> str:
+    hist_stores = hist_stores or {}
+    points = []
+    for r in results:
+        if r.lat is None or r.lon is None:
+            continue
+        h = hist_stores.get(r.key) or {}
+        points.append({
+            "lat": r.lat, "lon": r.lon, "name": r.store_name, "city": r.store_city,
+            "dist": (round(r.distance_km) if r.distance_km is not None else None),
+            "status": r.status, "url": r.url, "detail": r.detail,
+            "qty": (r.quantity if isinstance(r.quantity, int) else 0),
+            "trend": _trend(h.get("series")),
+        })
     if not points:
         return ""
     bar = (
@@ -212,10 +268,16 @@ def _map_section(results, home) -> str:
   var markers = [];
   pts.forEach(function(p){
     var ok = p.status === 'in_stock';
+    var rad=4, stroke='#b9c0cf', fill='#cdd3df', op=0.6;
+    if(ok){
+      rad = Math.max(7, Math.min(18, 6 + Math.sqrt((p.qty||1)) * 2.2));  // taille = quantité
+      if(p.trend > 0){ stroke='#2e9e2e'; fill='#46c93a'; }        // hausse / vient d'arriver
+      else if(p.trend < 0){ stroke='#d98a00'; fill='#f0b429'; }   // en baisse
+      else { stroke='#4a9e34'; fill='#6db455'; }                  // stable
+      op=0.95;
+    }
     var m = L.circleMarker([p.lat, p.lon], {
-      radius: ok ? 9 : 4, color: ok ? '#4a9e34' : '#b9c0cf',
-      weight: ok ? 2 : 1, fillColor: ok ? '#6db455' : '#cdd3df',
-      fillOpacity: ok ? 0.95 : 0.6
+      radius: rad, color: stroke, weight: ok ? 2 : 1, fillColor: fill, fillOpacity: op
     }).addTo(map);
     markers.push({m:m, p:p, ok:ok});
   });
@@ -322,9 +384,10 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     total_pieces = sum(r.quantity for r in results if r.quantity)
     now = _now_paris()
     hist_stores = (history or {}).get("stores", {})
-    map_html = _map_section(results, home)
+    now_ts = int(time.time())
+    map_html = _map_section(results, home, hist_stores)
     nat_html = _national_chart((history or {}).get("national", []))
-    cards = "\n".join(_card(r, hist_stores.get(r.key)) for r in results) or '<p class="empty">Aucune donnée.</p>'
+    cards = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in results) or '<p class="empty">Aucune donnée.</p>'
 
     headline = (f"{n_dispo} point{'s' if n_dispo > 1 else ''} de vente "
                 f"propose{'nt' if n_dispo > 1 else ''} le Midea PortaSplit&nbsp;!"
@@ -354,8 +417,9 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
   }}
   * {{ box-sizing:border-box; }}
+  html {{ color-scheme:light dark; }}
   body {{ margin:0; background:var(--bg); color:var(--txt); }}
-  .topbar {{ background:#fff; border-bottom:1px solid var(--line); }}
+  .topbar {{ background:var(--card); border-bottom:1px solid var(--line); }}
   .topbar .in {{ max-width:1100px; margin:0 auto; padding:16px 20px; display:flex;
                  align-items:center; justify-content:space-between; }}
   .logo {{ font-size:22px; font-weight:800; letter-spacing:-.5px; white-space:nowrap; }}
@@ -366,7 +430,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .hero p {{ margin:0; color:var(--mut); font-size:15px; }}
   .hero h1 .hl {{ color:var(--success-dark); }}
   .chips {{ display:flex; gap:10px; max-width:1100px; margin:18px auto 0; padding:0 20px; flex-wrap:wrap; }}
-  .chip {{ flex:1 1 150px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 16px;
+  .chip {{ flex:1 1 150px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px;
            font-size:13px; line-height:1.25; color:var(--mut); box-shadow:0 1px 2px rgba(20,23,40,.04); }}
   .chip b {{ display:block; font-size:20px; color:var(--txt); line-height:1.1; margin-bottom:2px; }}
   .chip.go b {{ color:var(--success-dark); }}
@@ -393,12 +457,18 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .tag {{ padding:2px 7px; border-radius:6px; font-size:10px; font-weight:600; }}
   .tag--good {{ background:var(--success-tint); color:var(--success-dark); }}
   .tag--mut {{ background:#f1f2f6; color:#8b92a3; }}
+  .badges {{ display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 2px; }}
+  .tag--new {{ background:#fff4d6; color:#9a6b00; }}
+  .tag--restock {{ background:var(--primary-tint); color:var(--primary-dark); }}
+  .tag--retrait {{ background:var(--success-tint); color:var(--success-dark); }}
+  .tag--eta {{ background:#fde8e9; color:#c0303b; }}
+  .card--new {{ box-shadow:0 0 0 2px #ffd96b, 0 6px 20px rgba(255,193,7,.28); }}
   .card-btns {{ display:flex; gap:6px; margin-top:4px; }}
   .btn {{ flex:1; text-align:center; padding:6px 10px; border-radius:9px; font-size:12px;
           font-weight:700; text-decoration:none; }}
   .btn--primary {{ background:var(--primary); color:#fff; }}
   .btn--primary:hover {{ background:var(--primary-dark); }}
-  .btn--ghost {{ background:#fff; color:var(--primary); border:1.5px solid var(--primary-tint); }}
+  .btn--ghost {{ background:var(--card); color:var(--primary); border:1.5px solid var(--primary-tint); }}
   .btn--ghost:hover {{ border-color:var(--primary); }}
   .empty {{ text-align:center; color:var(--mut); }}
   footer {{ text-align:center; color:var(--mut); font-size:12px; padding:0 20px 40px; }}
@@ -406,7 +476,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
           gap:8px; flex-wrap:wrap; }}
   .geo-ic {{ font-size:16px; }}
   .geo input {{ flex:0 1 240px; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
-                font-size:14px; }}
+                font-size:14px; background:var(--card); color:var(--txt); }}
   .geo-btn {{ padding:9px 14px; border:none; border-radius:10px; background:var(--primary); color:#fff;
               font-weight:700; font-size:14px; cursor:pointer; }}
   .geo-btn:hover {{ background:var(--primary-dark); }}
@@ -414,7 +484,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .geo-hint b {{ color:var(--txt); }}
   .geo-reset {{ color:var(--primary); font-size:13px; text-decoration:none; margin-left:auto; }}
   .geo-reset:hover {{ text-decoration:underline; }}
-  .natchart {{ max-width:1100px; margin:18px auto 0; padding:14px 18px; background:#fff;
+  .natchart {{ max-width:1100px; margin:18px auto 0; padding:14px 18px; background:var(--card);
                border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 4px rgba(20,23,40,.05); }}
   .natchart h2 {{ font-size:13px; color:var(--mut); margin:0; font-weight:700; }}
   .natchart .natnote {{ font-weight:500; }}
@@ -435,6 +505,19 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     .natchart {{ margin:14px 16px 0; padding:12px 14px; }}
     .natchart .big {{ font-size:22px; }}
     .grid {{ padding:0 16px; gap:10px; grid-template-columns:1fr 1fr; }}
+  }}
+  @media (prefers-color-scheme: dark) {{
+    :root {{
+      --bg:#0f1117; --card:#1a1d27; --line:#2a2e3c; --txt:#e8eaf0; --mut:#9aa1b2;
+      --primary-tint:#262b52; --primary-dark:#8b95f0;
+      --success-dark:#7bc862; --success-tint:#1b2a17;
+    }}
+    .state--no {{ background:#262a36; color:#9aa1b2; }}
+    .state--unk {{ background:#3a2f12; color:#e0b15a; }}
+    .tag--mut {{ background:#262a36; color:#9aa1b2; }}
+    .tag--new {{ background:#3a2f12; color:#e6c155; }}
+    .tag--eta {{ background:#3a1f22; color:#f0a0a8; }}
+    .b-other {{ background:#4a5163; }}
   }}
 </style></head>
 <body>
