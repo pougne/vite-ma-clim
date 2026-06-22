@@ -135,15 +135,45 @@ def _national_chart(series) -> str:
     def Y(v): return H - pad - (v / vmax) * (H - 2 * pad - 14)
     line = " ".join(f"{X(t):.1f},{Y(v):.1f}" for t, v in pts)
     area = f"{pad:.0f},{H - pad} " + line + f" {W - pad},{H - pad}"
+    natpoints = [{"t": t, "v": v, "fx": round(X(t) / W, 4), "fy": round(Y(v) / H, 4)}
+                 for t, v in pts]
+    script = (
+        "<script>(function(){var P=" + json.dumps(natpoints) + ";"
+        "var w=document.getElementById('natwrap');if(!w||P.length<2)return;"
+        "var ln=document.getElementById('natline'),dt=document.getElementById('natdot'),"
+        "tp=document.getElementById('nattip');"
+        "function fmt(t){return new Date(t*1000).toLocaleString('fr-FR',"
+        "{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}"
+        "function show(cx){var r=w.getBoundingClientRect();var f=(cx-r.left)/r.width;"
+        "if(f<0)f=0;if(f>1)f=1;var b=0,bd=2;for(var i=0;i<P.length;i++){"
+        "var d=Math.abs(P[i].fx-f);if(d<bd){bd=d;b=i;}}var p=P[b];"
+        "var x=p.fx*r.width,y=p.fy*r.height;"
+        "ln.style.left=x+'px';ln.style.display='block';"
+        "dt.style.left=x+'px';dt.style.top=y+'px';dt.style.display='block';"
+        "tp.textContent=fmt(p.t)+' · '+p.v+' pièce'+(p.v>1?'s':'');"
+        "tp.style.display='block';var tw=tp.offsetWidth,tx=x-tw/2;"
+        "if(tx<2)tx=2;if(tx+tw>r.width-2)tx=r.width-tw-2;tp.style.left=tx+'px';}"
+        "function hide(){ln.style.display='none';dt.style.display='none';tp.style.display='none';}"
+        "w.addEventListener('mousemove',function(e){show(e.clientX);});"
+        "w.addEventListener('mouseleave',hide);"
+        "w.addEventListener('touchstart',function(e){show(e.touches[0].clientX);},{passive:true});"
+        "w.addEventListener('touchmove',function(e){show(e.touches[0].clientX);},{passive:true});"
+        "w.addEventListener('touchend',hide);})();</script>"
+    )
     return (
         head +
         f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}'
         f'<span class="natrange">min {vmin} · max {vmax}</span></div>'
+        '<div class="natwrap" id="natwrap">'
         f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" class="natsvg">'
         f'<polygon points="{area}" fill="rgba(85,97,217,.12)"/>'
         f'<polyline points="{line}" fill="none" stroke="#5561d9" stroke-width="2" '
         'stroke-linejoin="round" stroke-linecap="round"/></svg>'
-        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)} · {ups} réassort(s) détecté(s)</div></div>')
+        '<div class="natline" id="natline"></div>'
+        '<div class="natdot" id="natdot"></div>'
+        '<div class="nattip" id="nattip"></div></div>'
+        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)} · {ups} réassort(s) détecté(s)</div></div>'
+        + script)
 
 
 def _trend(series) -> int:
@@ -493,6 +523,15 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   .natchart .big {{ font-size:26px; font-weight:800; margin:2px 0 6px; }}
   .natchart .natrange {{ font-size:12px; font-weight:600; color:var(--mut); margin-left:10px; }}
   .natsvg {{ width:100%; height:120px; display:block; }}
+  .natwrap {{ position:relative; touch-action:pan-y; }}
+  .natline {{ position:absolute; top:0; bottom:0; width:1px; background:var(--primary);
+              opacity:.45; display:none; pointer-events:none; }}
+  .natdot {{ position:absolute; width:9px; height:9px; margin:-5px 0 0 -5px; border-radius:50%;
+             background:var(--primary); border:2px solid var(--card);
+             box-shadow:0 1px 4px rgba(0,0,0,.3); display:none; pointer-events:none; }}
+  .nattip {{ position:absolute; top:2px; background:rgba(35,38,47,.96); color:#fff;
+             font-size:12px; font-weight:700; padding:4px 8px; border-radius:8px;
+             white-space:nowrap; display:none; pointer-events:none; z-index:5; }}
   .natsub {{ color:var(--mut); font-size:11px; margin-top:4px; }}
   .seen {{ color:var(--success-dark); font-size:10.5px; font-weight:700; }}
   .spark {{ display:block; }}
