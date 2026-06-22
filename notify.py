@@ -39,7 +39,8 @@ def _format_lines(results: list[Availability]) -> str:
         if d:
             head += f" · {d}"
         if getattr(r, "restock", False):
-            head += " · 🔁 RÉASSORT"
+            d_inc = getattr(r, "delta", None)
+            head += f" · 🔁 RÉASSORT +{d_inc}" if isinstance(d_inc, int) else " · 🔁 RÉASSORT"
         lines.append(f"{head}\n  {r.detail or 'dispo'}")
         if r.url:
             urls.append(r.url)
@@ -97,9 +98,13 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     # Quantité dans le titre : celle du plus proche (n==1) ou le total (n>1).
     if n == 1:
         qty = primary.quantity
-        qty_part = f"{qty} pièce{'s' if qty and qty > 1 else ''} · " if qty else ""
-        head = "Réassort" if restock else "PortaSplit dispo"
-        title = f"{head} · {qty_part}{near}"
+        if restock and isinstance(primary.delta, int):
+            qty_str = f"{qty} en stock" if qty is not None else "en stock"
+            title = f"Réassort +{primary.delta} · {qty_str} · {near}"
+        else:
+            qty_part = f"{qty} pièce{'s' if qty and qty > 1 else ''} · " if qty else ""
+            head = "PortaSplit dispo"
+            title = f"{head} · {qty_part}{near}"
     else:
         total = sum(r.quantity for r in res if isinstance(r.quantity, int))
         prefix = "Réassort · " if restock else ""
