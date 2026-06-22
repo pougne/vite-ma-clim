@@ -57,6 +57,7 @@ class StateStore:
                     # (1re dispo si seuil=0, sinon réassort/livraison).
                     if qty > wm:
                         r.restock = wm > 0
+                        r.delta = qty - wm
                         to_notify.append(r)
                         # on n'avance PAS le seuil ici : mark_notified le fera
                         # après un envoi réussi (sinon on retente au passage suivant).
