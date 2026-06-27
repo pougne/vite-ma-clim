@@ -3,7 +3,7 @@
     "status": "unknown",
     "detail": "section dispo introuvable",
     "store_name": "En ligne (livraison/retrait)",
-    "checked_at": "2026-06-27T04:47:59+00:00",
+    "checked_at": "2026-06-27T04:58:02+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -11,7 +11,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Place de Clichy",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -19,7 +19,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nation",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -27,7 +27,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bir Hakeim",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -35,7 +35,7 @@
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Les Lilas",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -43,7 +43,7 @@
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Levallois",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -51,7 +51,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Créteil",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -59,7 +59,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Villemomble",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -67,7 +67,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Fresnes",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -75,7 +75,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Vélizy",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -83,7 +83,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Cormeilles-en-Parisis",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -91,7 +91,7 @@
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Solférino",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -99,7 +99,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Englos",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -107,7 +107,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bondues",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -115,7 +115,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Hénin-Beaumont",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -123,7 +123,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Dunkerque",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -131,7 +131,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Creil St Maximin",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -139,7 +139,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Reims Thillois",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -147,7 +147,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Gonesse",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -155,7 +155,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Claye-Souilly",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -163,7 +163,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Pierrelaye",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -171,7 +171,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Ormesson",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -179,7 +179,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Melun",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -187,7 +187,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Barentin",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -195,7 +195,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Chambourcy",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -203,7 +203,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Les-Clayes-Sous-Bois",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -211,7 +211,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Coignières",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -219,7 +219,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Caen Hérouville",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -227,7 +227,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Caen Fleury-sur-Orne",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -235,7 +235,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Le Mans",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -243,7 +243,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Cap Malo",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -251,7 +251,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Rennes-St Jacques",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -259,7 +259,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Olivet",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -267,7 +267,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Villabé",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -275,7 +275,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Les Ulis",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -283,7 +283,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Chambray-Lès-Tours",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -291,7 +291,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Poitiers",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -299,7 +299,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Niort",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -307,7 +307,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nantes La Beaujoire",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -315,7 +315,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nantes Orvault",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -323,7 +323,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Limoges",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -331,7 +331,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Vannes",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -339,7 +339,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama St Nazaire",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -347,7 +347,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Quimper",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -355,7 +355,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama La Rochelle",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -363,7 +363,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Brest",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -371,7 +371,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Dijon",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -379,7 +379,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Chalon-sur-Saône",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -387,7 +387,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Besançon",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -395,7 +395,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bourg-en-Bresse",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -403,7 +403,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Roanne",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -411,7 +411,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Rillieux-La-Pape",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -419,7 +419,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Dardilly",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -427,7 +427,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Vandoeuvre",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -435,7 +435,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Metz Tessy",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -443,7 +443,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bron",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -451,7 +451,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Metz",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -459,7 +459,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Terville",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -467,7 +467,7 @@
     "status": "in_stock",
     "detail": "Stock limité : 1 pièce · Retrait 2h ✗",
     "store_name": "Castorama Colmar",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 1
   },
@@ -475,7 +475,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Strasbourg",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -483,7 +483,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Kingersheim",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -491,7 +491,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Chambéry",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -499,7 +499,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Givors",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -507,7 +507,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bourgoin-Jallieu",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -515,7 +515,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama St Marcel Les Valence",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -523,7 +523,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Grenoble",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -531,7 +531,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Clermont-Ferrand",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -539,7 +539,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Villenave d'Ornon",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -547,7 +547,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Mérignac",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -555,7 +555,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bordeaux Lormont",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -563,7 +563,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Angoulême",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -571,7 +571,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Agen",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -579,7 +579,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Anglet",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -587,7 +587,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Pau - Lescar",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -595,7 +595,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Toulouse L'Union",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -603,23 +603,23 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Toulouse St Orens",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
   "Castorama|8431312260509|casto-1476": {
     "status": "in_stock",
-    "detail": "Stock magasin : 5 pièces · Retrait 2h ✓",
+    "detail": "Stock limité : 2 pièces · Retrait 2h ✗",
     "store_name": "Castorama Toulouse Blagnac",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
-    "notified_qty": 5
+    "notified_qty": 2
   },
   "Castorama|8431312260509|casto-1446": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Portet sur Garonne",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -627,7 +627,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Béziers",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -635,7 +635,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Perpignan",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -643,7 +643,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama St Clément",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -651,7 +651,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Lattes",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -659,7 +659,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nîmes",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -667,7 +667,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Avignon",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -675,7 +675,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Vitrolles",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -683,7 +683,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Plan de Campagne",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -691,7 +691,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Aix en Provence",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -699,7 +699,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Marseille St - Loup",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -707,7 +707,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama La Seyne sur Mer",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -715,7 +715,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Toulon La Garde",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -723,7 +723,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Fréjus",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -731,7 +731,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Antibes",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -739,7 +739,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Le Cannet",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -747,7 +747,7 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Mandelieu",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -755,7 +755,7 @@
     "status": "unknown",
     "detail": "HTTP 403",
     "store_name": "En ligne (livraison)",
-    "checked_at": "2026-06-27T04:48:18+00:00",
+    "checked_at": "2026-06-27T04:58:09+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -767,7 +767,7 @@
   },
   "__health__": {
     "Boulanger": {
-      "streak": 582,
+      "streak": 583,
       "alerted": true
     },
     "Castorama": {
@@ -775,7 +775,7 @@
       "alerted": false
     },
     "Optimea": {
-      "streak": 389,
+      "streak": 390,
       "alerted": true
     }
   },
@@ -3056,6 +3056,10 @@
       [
         1782535698,
         6
+      ],
+      [
+        1782536289,
+        3
       ]
     ],
     "stores": {
@@ -4075,7 +4079,7 @@
         "name": "Castorama Toulouse Blagnac",
         "city": "Toulouse",
         "first_seen": 1782527283,
-        "last": 5,
+        "last": 2,
         "series": [
           [
             1781922659,
@@ -4092,6 +4096,10 @@
           [
             1782532709,
             5
+          ],
+          [
+            1782536289,
+            2
           ]
         ]
       },
