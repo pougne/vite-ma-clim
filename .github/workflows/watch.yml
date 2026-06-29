@@ -20,7 +20,7 @@ jobs:
   watch:
     runs-on: ubuntu-latest
     # Image officielle Playwright : navigateur + libs déjà installés.
-    container: mcr.microsoft.com/playwright/python:v1.60.0-jammy
+    container: mcr.microsoft.com/playwright/python:v1.61.0-jammy
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
