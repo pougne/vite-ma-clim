@@ -11,11 +11,22 @@ from typing import Iterable
 
 from models import Availability
 
-# UA récent et crédible (à rafraîchir de temps en temps).
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-)
+def _build_ua(browser) -> str:
+    """UA calé sur la version réelle du Chromium lancé.
+
+    On NE fige plus la version : un UA figé (ex. Chrome/126) sur un moteur plus
+    récent crée un décalage avec les client-hints (Sec-CH-UA) et l'empreinte TLS
+    que les anti-bots (DataDome/Akamai/WAF) détectent -> 403 ou réponses vides.
+    En calant l'UA sur browser.version, UA et client-hints redeviennent cohérents
+    (et ça reste bon après chaque montée d'image Playwright).
+    """
+    major = (getattr(browser, "version", "") or "").split(".")[0]
+    if not major.isdigit():
+        major = "131"
+    return (
+        f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        f"(KHTML, like Gecko) Chrome/{major}.0.0.0 Safari/537.36"
+    )
 
 
 def log(msg: str) -> None:
@@ -32,7 +43,7 @@ def make_browser_context(playwright, headless: bool = True):
         ],
     )
     context = browser.new_context(
-        user_agent=USER_AGENT,
+        user_agent=_build_ua(browser),
         locale="fr-FR",
         timezone_id="Europe/Paris",
         viewport={"width": 1366, "height": 900},
