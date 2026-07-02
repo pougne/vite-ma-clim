@@ -17,7 +17,7 @@ try:
 except Exception:  # pragma: no cover
     ZoneInfo = None
 
-from models import Availability, IN_STOCK, OUT_OF_STOCK
+from models import Availability, IN_STOCK, OUT_OF_STOCK, UNKNOWN
 
 APP_NAME = "Vite Ma Clim"
 
@@ -334,7 +334,8 @@ def _map_section(results, home, hist_stores=None) -> str:
   }
 
   function sortCards(o){
-    var grid=document.getElementById('grid'); if(!grid) return;
+    ['grid','grid2'].forEach(function(gid){
+    var grid=document.getElementById(gid); if(!grid) return;
     var cards=[].slice.call(grid.querySelectorAll('.card'));
     cards.forEach(function(c){
       var la=parseFloat(c.getAttribute('data-lat')), lo=parseFloat(c.getAttribute('data-lon'));
@@ -348,6 +349,7 @@ def _map_section(results, home, hist_stores=None) -> str:
       return a._d - b._d;
     });
     cards.forEach(function(c){ grid.appendChild(c); });
+    });
   }
 
   function recenter(o){
@@ -417,7 +419,22 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     now_ts = int(time.time())
     map_html = _map_section(results, home, hist_stores)
     nat_html = _national_chart((history or {}).get("national", []))
-    cards = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in results) or '<p class="empty">Aucune donnée.</p>'
+    avail = [r for r in results if r.status == IN_STOCK]
+    others = [r for r in results if r.status != IN_STOCK]
+    cards_ok = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in avail) \
+        or '<p class="empty">Aucune disponibilité actuellement — vous serez notifié.</p>'
+    cards_other = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in others) \
+        or '<p class="empty">Rien à afficher.</p>'
+    # Santé des sources : OK si au moins un résultat exploitable (≠ inconnu)
+    src_ok: dict[str, bool] = {}
+    for r in results:
+        src_ok[r.retailer] = src_ok.get(r.retailer, False) or (r.status != UNKNOWN)
+    order = ["Castorama", "Boulanger", "Optimea"]
+    names = [n for n in order if n in src_ok] + [n for n in src_ok if n not in order]
+    health_html = " ".join(
+        (f'<span class="h-ok">{n} \u2713</span>' if src_ok[n]
+         else f'<span class="h-ko">{n} \u26a0\ufe0f</span>')
+        for n in names)
 
     headline = (f"{n_dispo} point{'s' if n_dispo > 1 else ''} de vente "
                 f"propose{'nt' if n_dispo > 1 else ''} le Midea PortaSplit&nbsp;!"
@@ -428,7 +445,6 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     doc = f"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="120">
 <meta name="theme-color" content="#5561d9">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
@@ -469,7 +485,24 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   #map {{ height:360px; max-width:1100px; margin:20px auto 0; border-radius:18px;
           border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,23,40,.05); }}
   .leaflet-popup-content {{ font-size:13px; }}
-  .grid {{ max-width:1100px; margin:18px auto 56px; padding:0 20px;
+  .sec {{ max-width:1100px; margin:20px auto 0; padding:0; }}
+  .sec-h {{ max-width:1100px; margin:0 auto; padding:0 20px; font-size:15px; font-weight:800;
+            letter-spacing:-.2px; display:flex; align-items:center; gap:8px; color:var(--txt); }}
+  .sec-n {{ background:var(--primary-tint); color:var(--primary-dark); border-radius:999px;
+            padding:2px 9px; font-size:12px; font-weight:800; }}
+  details.others {{ margin-bottom:40px; }}
+  details.others summary {{ cursor:pointer; list-style:none; user-select:none; }}
+  details.others summary::-webkit-details-marker {{ display:none; }}
+  details.others summary::after {{ content:'\25BE'; color:var(--mut); margin-left:4px;
+            transition:transform .15s; display:inline-block; }}
+  details.others[open] summary::after {{ transform:rotate(180deg); }}
+  details.others .grid {{ margin-top:12px; }}
+  .health {{ max-width:1100px; margin:10px auto 0; padding:0 20px; font-size:12px; color:var(--mut); }}
+  .h-ok {{ color:var(--success-dark); font-weight:700; }}
+  .h-ko {{ color:#c0303b; font-weight:700; }}
+  .stale {{ max-width:1060px; margin:12px auto 0; padding:10px 14px; border-radius:12px;
+            background:#fff4d6; color:#9a6b00; font-size:13px; font-weight:600; }}
+  .grid {{ max-width:1100px; margin:14px auto 26px; padding:0 20px;
            display:grid; grid-template-columns:repeat(auto-fill,minmax(208px,1fr)); gap:11px; }}
   .card {{ background:var(--card); border:1px solid var(--line); border-radius:13px; padding:11px 13px;
            box-shadow:0 1px 5px rgba(20,23,40,.06); display:flex; flex-direction:column; gap:5px; }}
@@ -558,6 +591,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     .tag--mut {{ background:#262a36; color:#9aa1b2; }}
     .tag--new {{ background:#3a2f12; color:#e6c155; }}
     .tag--eta {{ background:#3a1f22; color:#f0a0a8; }}
+    .stale {{ background:#3a2f12; color:#e6c155; }}
     .b-other {{ background:#4a5163; }}
   }}
 </style></head>
@@ -578,18 +612,48 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   <div class="chip {'go' if total_pieces else ''}"><b>{total_pieces}</b>pièce{'s' if total_pieces != 1 else ''} en stock</div>
 </div>
 
+<div class="health">Sources : {health_html}</div>
+<div id="stale" class="stale" hidden>\u26a0\ufe0f Donn\u00e9es possiblement p\u00e9rim\u00e9es \u2014 derni\u00e8re mise \u00e0 jour il y a <span id="staleage"></span>.</div>
+
+<section class="sec">
+  <h2 class="sec-h">Disponibles <span class="sec-n">{n_dispo}</span></h2>
+  <div class="grid" id="grid">
+{cards_ok}
+  </div>
+</section>
+
 {nat_html}
 
 {map_html}
 
-<div class="grid" id="grid">
-{cards}
-</div>
+<details class="sec others" id="others"{' open' if n_dispo == 0 else ''}>
+  <summary class="sec-h">Autres magasins (ruptures &amp; non r\u00e9f\u00e9renc\u00e9s) <span class="sec-n">{len(others)}</span></summary>
+  <div class="grid" id="grid2">
+{cards_other}
+  </div>
+</details>
 
 <footer>{APP_NAME} · données Castorama, Boulanger &amp; Optimea · classé par distance depuis chez vous</footer>
 </body></html>"""
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
+    _live = (
+        "<script>(function(){var GEN=" + str(now_ts) + ";"
+        "function fmt(s){return s<3600?Math.round(s/60)+' min':(s/3600).toFixed(1).replace('.',',')+' h';}"
+        "function chk(){var s=Math.max(0,Math.floor(Date.now()/1000-GEN));"
+        "var el=document.getElementById('stale');if(!el)return;"
+        "if(s>2700){el.hidden=false;var a=document.getElementById('staleage');if(a)a.textContent=fmt(s);}"
+        "else{el.hidden=true;}}chk();setInterval(chk,60000);"
+        "var d=document.getElementById('others');"
+        "try{var o=sessionStorage.getItem('vmc-others');if(d&&o!==null)d.open=(o==='1');}catch(e){}"
+        "if(d)d.addEventListener('toggle',function(){try{sessionStorage.setItem('vmc-others',d.open?'1':'0');}catch(e){}});"
+        "try{var y=sessionStorage.getItem('vmc-scroll');"
+        "if(y!==null){window.scrollTo(0,parseInt(y,10));sessionStorage.removeItem('vmc-scroll');}}catch(e){}"
+        "setTimeout(function(){try{sessionStorage.setItem('vmc-scroll',String(window.scrollY||0));}catch(e){}"
+        "location.reload();},120000);"
+        "})();</script>"
+    )
+    doc = doc.replace("</body>", _live + "</body>", 1)
     out.write_text(doc, encoding="utf-8")
     # Ressources PWA / icône iOS (publiées à côté de index.html par le workflow).
     try:
