@@ -118,4 +118,3 @@ notifications:
 output:
   dashboard: "dashboard.html"
   state: "state.json"
-</yaml>
