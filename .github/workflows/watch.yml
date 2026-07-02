@@ -2,10 +2,10 @@ name: vite-ma-clim
 
 on:
   schedule:
-    - cron: "7,17,27,37,47,57 * * * *"   # ~toutes les 10 min, decale du haut de l'heure (plus fiable)
+    - cron: "7,27,47 * * * *"   # filet de sécurité GitHub (le pinger cron-job.org pilote la vraie cadence)
   workflow_dispatch: {}
   push:
-    branches: [master]   # tout commit relance le workflow et redeploie
+    branches: [master]
 
 concurrency:
   group: vite-ma-clim
@@ -19,7 +19,7 @@ permissions:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    # Image officielle Playwright : navigateur + libs déjà installés.
+    # Doit matcher la version de playwright dans requirements.txt (bumper les DEUX ensemble).
     container: mcr.microsoft.com/playwright/python:v1.61.0-jammy
     environment:
       name: github-pages
@@ -33,8 +33,6 @@ jobs:
       - name: Run Vite Ma Clim
         env:
           VMC_NTFY_TOPIC: ${{ secrets.VMC_NTFY_TOPIC }}
-          VMC_HOME_LAT: ${{ secrets.VMC_HOME_LAT }}
-          VMC_HOME_LON: ${{ secrets.VMC_HOME_LON }}
         run: python clim_watch.py
 
       - name: Prepare site
@@ -43,18 +41,4 @@ jobs:
           cp dashboard.html site/index.html
           cp -f icon.png manifest.webmanifest site/ 2>/dev/null || true
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - id: deploy
-        uses: actions/deploy-pages@v4
-
-      - name: Persist state
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git config user.name "vite-ma-clim-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state.json
-          git commit -m "update state [skip ci]" || echo "rien à committer"
-          git push || echo "rien à pousser"
+      - u
