@@ -11,8 +11,9 @@ interval_minutes: 60
 # Zones à surveiller : un code postal par ville. Le checker saisit ce CP
 # sur le site et lit les magasins proches. ≤ ~2h30 de Paris.
 # ---------------------------------------------------------------------
-# Point de référence pour les distances. Valeur par défaut = Paris-centre.
-# Pour tes coordonnées exactes sans les publier : secrets VMC_HOME_LAT / VMC_HOME_LON.
+# Point de référence PUBLIC pour les distances (rendu du site + notifs) = Paris-centre.
+# Ne PAS mettre de vraies coordonnées perso ici : le dashboard est publié sur GitHub Pages.
+# Chaque visiteur fixe sa position sur le site (mémorisée dans SON navigateur).
 home: { lat: 48.8566, lon: 2.3522 }
 
 # Couverture nationale : chaque ville renvoie les 10 magasins les plus proches.
@@ -91,8 +92,12 @@ notifications:
   # --- ntfy : le plus simple. Installe l'appli ntfy (iOS/Android), abonne-toi
   #     à un nom de sujet privé et difficile à deviner, ex : clim-portasplit-xyz918.
   #     Aucune inscription, aucun mot de passe.
+  #     Multi-destinataires : le secret VMC_NTFY_TOPIC peut contenir plusieurs
+  #     URLs séparées par des virgules (1re = perso, suivantes = partagées).
   ntfy:
     enabled: true
+    # Push priorité MAX si un magasin est à moins de N km (~3 h de route), sinon normale.
+    high_priority_km: 225
     topic_url: "https://ntfy.sh/clim-portasplit-CHANGE-MOI-en-un-truc-secret"
 
   # --- email : via SMTP. Pour Gmail, crée un "mot de passe d'application"
@@ -113,3 +118,4 @@ notifications:
 output:
   dashboard: "dashboard.html"
   state: "state.json"
+</yaml>
