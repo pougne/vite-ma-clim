@@ -84,7 +84,14 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
     res = _by_distance(results)
     primary = res[0]
     n = len(res)
-    topic_url = cfg["topic_url"].rstrip("/")
+    # Multi-destinataires : topic_url peut contenir plusieurs URLs séparées par
+    # des virgules. La 1re = sujet perso (prioritaire : un échec déclenche le
+    # re-essai au prochain passage) ; les suivantes = sujets partagés (copains),
+    # en best-effort (un échec chez eux ne bloque pas et ne re-notifie pas tout).
+    topic_urls = [u.strip().rstrip("/") for u in cfg["topic_url"].split(",") if u.strip()]
+    if not topic_urls:
+        raise RuntimeError(f"topic_url invalide: {cfg.get('topic_url')!r}")
+    topic_url = topic_urls[0]
     base, _, topic = topic_url.rpartition("/")
     if not base or not topic:
         raise RuntimeError(f"topic_url invalide: {cfg.get('topic_url')!r}")
@@ -128,30 +135,42 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
                         "url": f"https://www.google.com/maps/dir/?api=1"
                                f"&destination={primary.lat},{primary.lon}"})
 
-    payload = {
-        "topic": topic,
-        "title": title,
-        "message": _format_lines(res),
-        "tags": tags,
-        "priority": priority,
-        "click": primary.url or topic_url,
-        "actions": actions[:3],
-    }
-    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        base, data=data,
-        headers={"Content-Type": "application/json; charset=utf-8"},
-        method="POST",
-    )
-    try:
-        urllib.request.urlopen(req, timeout=15)
-    except urllib.error.HTTPError as e:
-        body = ""
+    body_msg = _format_lines(res)
+    for i, tu in enumerate(topic_urls):
+        b, _, t = tu.rpartition("/")
+        if not b or not t:
+            print(f"[notify] ntfy: URL ignorée (invalide): {tu!r}")
+            continue
+        payload = {
+            "topic": t,
+            "title": title,
+            "message": body_msg,
+            "tags": tags,
+            "priority": priority,
+            "click": primary.url or tu,
+            "actions": actions[:3],
+        }
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            b, data=data,
+            headers={"Content-Type": "application/json; charset=utf-8"},
+            method="POST",
+        )
         try:
-            body = e.read().decode("utf-8", "replace")[:300]
-        except Exception:
-            pass
-        raise RuntimeError(f"ntfy HTTP {e.code}: {body}") from e
+            urllib.request.urlopen(req, timeout=15)
+        except Exception as e:
+            detail = ""
+            if isinstance(e, urllib.error.HTTPError):
+                try:
+                    detail = e.read().decode("utf-8", "replace")[:300]
+                except Exception:
+                    pass
+            if i == 0:
+                # Sujet perso : on laisse remonter -> pas de mark_notified,
+                # re-essai au prochain passage (comportement historique).
+                raise RuntimeError(f"ntfy HTTP: {detail or e}") from e
+            # Sujets copains : best-effort, on loggue sans bloquer.
+            print(f"[notify] ntfy partagé ÉCHEC ({t}): {detail or e}")
 
 
 def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> None:
@@ -170,7 +189,9 @@ def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> N
     ntfy = notif_cfg.get("ntfy", {})
     if ntfy.get("enabled"):
         try:
-            topic_url = ntfy["topic_url"].rstrip("/")
+            # Alertes de panne : uniquement vers le 1er sujet (perso/admin),
+            # les copains n'ont pas besoin des soucis d'infra.
+            topic_url = ntfy["topic_url"].split(",")[0].strip().rstrip("/")
             req = urllib.request.Request(
                 topic_url, data=body.encode("utf-8"),
                 headers={"Title": title, "Priority": "default",
