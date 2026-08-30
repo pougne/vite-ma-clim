@@ -3,7 +3,7 @@
     "status": "unknown",
     "detail": "état indéterminé",
     "store_name": "En ligne (livraison/retrait)",
-    "checked_at": "2026-08-29T20:53:56+00:00",
+    "checked_at": "2026-08-30T00:18:34+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -755,7 +755,7 @@
     "status": "unknown",
     "detail": "HTTP 403",
     "store_name": "En ligne (livraison)",
-    "checked_at": "2026-08-29T20:54:24+00:00",
+    "checked_at": "2026-08-30T00:19:54+00:00",
     "notified": false,
     "notified_qty": 0
   },
@@ -767,15 +767,15 @@
   },
   "__health__": {
     "Boulanger": {
-      "streak": 4511,
+      "streak": 4512,
       "alerted": true
     },
     "Castorama": {
-      "streak": 0,
+      "streak": 1,
       "alerted": false
     },
     "Optimea": {
-      "streak": 4318,
+      "streak": 4319,
       "alerted": true
     }
   },
@@ -9949,7 +9949,7 @@
     "status": "unknown",
     "detail": "API magasins sans résultat",
     "store_name": "Castorama (aucun magasin)",
-    "checked_at": "2026-08-29T15:47:52+00:00",
+    "checked_at": "2026-08-30T00:19:53+00:00",
     "notified": false,
     "notified_qty": 0
   }
