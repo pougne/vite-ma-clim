@@ -44,9 +44,12 @@ def test_health_last_ok(tmp_path):
 def test_state_changed_ignores_volatile():
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
     import state_changed as sc
-    a = {"k": {"status": "in_stock", "checked_at": "1"}, "__health__": {"C": {"streak": 1}}}
-    b = {"k": {"status": "in_stock", "checked_at": "2"}, "__health__": {"C": {"streak": 9}}}
+    a = {"k": {"status": "in_stock", "checked_at": "1"}, "__health__": {"C": {"streak": 1, "last_ok_ts": 1}}}
+    b = {"k": {"status": "in_stock", "checked_at": "2"}, "__health__": {"C": {"streak": 1, "last_ok_ts": 9}}}
     assert sc.strip(a) == sc.strip(b)
+    b["__health__"]["C"]["streak"] = 2               # le compteur de panne compte
+    assert sc.strip(a) != sc.strip(b)
+    b["__health__"]["C"]["streak"] = 1
     b["k"]["status"] = "out_of_stock"
     assert sc.strip(a) != sc.strip(b)
 
@@ -68,15 +71,62 @@ def test_castorama_without_token(monkeypatch):
     assert c.partial and res[0].status == UNKNOWN
 
 
-def test_email_env(monkeypatch, tmp_path):
+def _load(monkeypatch, tmp_path, env, yaml_txt="notifications:\n  email:\n    enabled: false\n"):
     import clim_watch as cw
+    for k in ("VMC_SMTP_HOST", "VMC_SMTP_USER", "VMC_SMTP_PASSWORD", "VMC_SMTP_FROM", "VMC_SMTP_TO"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
     p = tmp_path / "c.yaml"
-    p.write_text("notifications:\n  email:\n    enabled: false\n", encoding="utf-8")
-    monkeypatch.setenv("VMC_SMTP_USER", "u@x")
-    monkeypatch.setenv("VMC_SMTP_PASSWORD", "pw")
-    monkeypatch.setenv("VMC_SMTP_TO", "a@x, b@x")
-    em = cw.load_config(p)["notifications"]["email"]
-    assert em["enabled"] and em["to_addrs"] == ["a@x", "b@x"] and em["from_addr"] == "u@x"
+    p.write_text(yaml_txt, encoding="utf-8")
+    return cw.load_config(p)["notifications"]["email"]
+
+
+def test_email_env_complete(monkeypatch, tmp_path):
+    em = _load(monkeypatch, tmp_path, {"VMC_SMTP_USER": "u@x", "VMC_SMTP_PASSWORD": "pw",
+                                       "VMC_SMTP_FROM": "f@x", "VMC_SMTP_TO": "a@x, b@x"})
+    assert em["enabled"] and em["to_addrs"] == ["a@x", "b@x"] and em["from_addr"] == "f@x"
+
+
+def test_email_env_missing_to_skips_placeholders(monkeypatch, tmp_path):
+    yaml_txt = ("notifications:\n  email:\n    enabled: false\n"
+                "    from_addr: ton.adresse@gmail.com\n    to_addrs: [ton.adresse@gmail.com]\n")
+    em = _load(monkeypatch, tmp_path, {"VMC_SMTP_USER": "u@x", "VMC_SMTP_PASSWORD": "pw",
+                                       "VMC_SMTP_FROM": "f@x"}, yaml_txt)
+    assert em["enabled"] is False
+
+
+def test_email_placeholder_config_disabled(monkeypatch, tmp_path):
+    yaml_txt = ("notifications:\n  email:\n    enabled: true\n    user: ton.adresse@gmail.com\n"
+                "    from_addr: ton.adresse@gmail.com\n    to_addrs: [ton.adresse@gmail.com]\n")
+    assert _load(monkeypatch, tmp_path, {}, yaml_txt)["enabled"] is False
+
+
+def test_outage_alert_fires_across_ci_runs(tmp_path):
+    """Simule GitHub Actions : chaque run repart de l'état COMMITTÉ, qui n'est
+    mis à jour que si state_changed le juge utile. L'alerte doit partir au seuil."""
+    import json
+    import shutil
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import state_changed as sc
+    committed = tmp_path / "committed.json"
+    committed.write_text("{}", encoding="utf-8")
+    work = tmp_path / "state.json"
+    alerts = []
+    silent = [Availability("Castorama", "P", "ean", "en-ligne", "x", "", UNKNOWN)]
+    for _ in range(5):
+        shutil.copy(committed, work)                 # checkout
+        st = StateStore(work)
+        broken, _ = st.health_update(["Castorama"], silent)
+        alerts += broken
+        st.save()
+        old = json.loads(committed.read_text(encoding="utf-8"))
+        new = json.loads(work.read_text(encoding="utf-8"))
+        if sc.strip(old) != sc.strip(new):          # « commit » seulement si utile
+            shutil.copy(work, committed)
+    assert alerts == ["Castorama"]
+    h = json.loads(committed.read_text(encoding="utf-8"))["__health__"]["Castorama"]
+    assert h["streak"] == StateStore.HEALTH_THRESHOLD and h["alerted"]
 
 
 def test_partial_pass_marks_unknown_and_skips_national(monkeypatch, tmp_path):

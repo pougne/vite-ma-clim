@@ -3,7 +3,7 @@ name: tests
 on:
   pull_request:
   push:
-    branches-ignore: [master]
+    branches: [master]
 
 jobs:
   pytest:

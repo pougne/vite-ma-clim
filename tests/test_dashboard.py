@@ -31,6 +31,7 @@ def test_render_basics(tmp_path):
     # 9 : version.json écrit, polling présent
     assert json.loads((tmp_path / "version.json").read_text())["ts"] > 0
     assert "version.json?_=" in html
+    assert "setTimeout(reload" not in html and "++fails>=3" in html
     # 12 : source désactivée affichée comme telle et absente du pied de page
     assert "Boulanger · désactivé" in html
     footer = html[html.index("<footer>"):html.index("</footer>")]

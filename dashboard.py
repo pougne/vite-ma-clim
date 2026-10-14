@@ -816,7 +816,7 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     # Rechargement : version.json publié à côté ; le navigateur le consulte toutes
-    # les 2 min et ne recharge QUE si l'horodatage a changé (repli : 10 min).
+    # les 2 min et ne recharge QUE si l'horodatage a changé (repli : rechargement après 3 échecs consécutifs).
     _live = (
         "<script>(function(){var GEN=" + str(now_ts) + ";"
         "function fmt(s){return s<3600?Math.round(s/60)+' min':(s/3600).toFixed(1).replace('.',',')+' h';}"
@@ -830,13 +830,13 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
         "try{var y=sessionStorage.getItem('vmc-scroll');"
         "if(y!==null){window.scrollTo(0,parseInt(y,10));sessionStorage.removeItem('vmc-scroll');}}catch(e){}"
         "function reload(){try{sessionStorage.setItem('vmc-scroll',String(window.scrollY||0));}catch(e){}location.reload();}"
-        "var t0=Date.now();"
+        # Recharge seulement si version.json change ; repli : 3 échecs de suite.
+        "var fails=0;"
         "function poll(){fetch('version.json?_='+Date.now(),{cache:'no-store'})"
-        ".then(function(r){return r.ok?r.json():null;})"
-        ".then(function(j){if(j&&j.ts&&j.ts!==GEN)reload();})"
-        ".catch(function(){if(Date.now()-t0>600000)reload();});}"
+        ".then(function(r){if(!r.ok)throw 0;return r.json();})"
+        ".then(function(j){fails=0;if(j&&j.ts&&j.ts!==GEN)reload();})"
+        ".catch(function(){if(++fails>=3)reload();});}"
         "setInterval(poll,120000);"
-        "setTimeout(reload,600000);"
         "})();</script>"
     )
     # Le script de liste doit être défini AVANT celui de la carte (qui l'appelle).

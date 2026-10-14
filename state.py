@@ -159,7 +159,9 @@ class StateStore:
             mute = (len(statuses) == 0) or all(st == UNKNOWN for st in statuses)
             h = health.get(name, {"streak": 0, "alerted": False})
             if mute:
-                h["streak"] = h.get("streak", 0) + 1
+                # plafonné au seuil : au-delà, la valeur n'apporte rien et
+                # forcerait un commit de state.json à chaque passage
+                h["streak"] = min(h.get("streak", 0) + 1, self.HEALTH_THRESHOLD)
                 if h["streak"] >= self.HEALTH_THRESHOLD and not h.get("alerted"):
                     broken_now.append(name)
                     h["alerted"] = True

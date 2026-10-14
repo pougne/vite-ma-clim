@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Sort 0 si state.json a changé de façon UTILE par rapport à HEAD, 1 sinon.
 
-On ignore les champs qui bougent à chaque passage sans valeur (horodatage
-`checked_at`, compteurs de passages muets `streak`, `last_ok_ts`), pour ne
-committer l'état que quand il y a vraiment du nouveau.
+On ignore les champs qui bougent à chaque passage sans valeur (horodatages
+`checked_at` et `last_ok_ts`), pour ne committer l'état que quand il y a
+vraiment du nouveau. `streak` (passages muets consécutifs) n'est PAS ignoré :
+sinon le compteur repartirait de l'état committé à chaque run et l'alerte
+« ne répond plus » ne se déclencherait jamais. Il est plafonné au seuil
+(state.py) pour ne pas forcer un commit à chaque passage pendant une panne.
 """
 import json
 import subprocess
 import sys
 
-IGNORED = {"checked_at", "streak", "last_ok_ts"}
+IGNORED = {"checked_at", "last_ok_ts"}
 
 
 def strip(o):

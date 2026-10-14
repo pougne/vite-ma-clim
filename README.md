@@ -15,9 +15,9 @@ magasin, partout en France), Optimea (vendeur officiel, en ligne) et Boulanger
   `state.json` → notifications éventuelles → rendu du dashboard
   (`index.html` + `version.json`) → déploiement Pages.
 - `state.json` n'est committé **que s'il a changé utilement**
-  (`scripts/state_changed.py` ignore les horodatages), avec `pull --rebase` et
+  (`scripts/state_changed.py` ignore les horodatages `checked_at` / `last_ok_ts`, mais pas le compteur de panne), avec `pull --rebase` et
   3 essais ; le job échoue visiblement si le push est impossible.
-- `.github/workflows/tests.yml` lance `pytest` sur chaque pull request.
+- `.github/workflows/tests.yml` lance `pytest` sur chaque pull request et à chaque push sur `master`.
 
 ## Notifications (anti-bruit)
 
@@ -42,7 +42,7 @@ affichée « hors service » sur le dashboard après `source_down_days` jours (7
 |---|---|---|
 | `VMC_NTFY_TOPIC` | oui | URL(s) ntfy, séparées par des virgules (1re = perso) |
 | `VMC_CASTO_TOKEN` | oui | identifiant d'application de l'API Kingfisher (Castorama) ; sans lui Castorama est ignoré |
-| `VMC_SMTP_HOST`, `VMC_SMTP_USER`, `VMC_SMTP_PASSWORD`, `VMC_SMTP_FROM`, `VMC_SMTP_TO` | non | email (Gmail : mot de passe d'application) ; actif si USER + PASSWORD présents |
+| `VMC_SMTP_HOST`, `VMC_SMTP_USER`, `VMC_SMTP_PASSWORD`, `VMC_SMTP_FROM`, `VMC_SMTP_TO` | non | email (Gmail : mot de passe d'application) ; actif seulement si USER, PASSWORD, FROM **et** TO sont fournis (les adresses d'exemple de `config.yaml` ne sont jamais utilisées) |
 
 Ne mettez **aucun** secret dans `config.yaml` : le dépôt et le dashboard sont publics.
 La position de référence (`home`) reste Paris-centre ; chaque visiteur choisit sa

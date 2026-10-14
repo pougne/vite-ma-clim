@@ -38,17 +38,25 @@ def load_config(path: Path) -> dict:
         cfg["notifications"]["ntfy"]["enabled"] = True
         cfg["notifications"]["ntfy"]["topic_url"] = topic
     # Email : identifiants SMTP via secrets (jamais dans config.yaml publié).
-    env_map = {"VMC_SMTP_HOST": "host", "VMC_SMTP_USER": "user",
-               "VMC_SMTP_PASSWORD": "password", "VMC_SMTP_FROM": "from_addr"}
+    # Les adresses d'exemple de config.yaml ne sont JAMAIS utilisées : si
+    # l'email est fourni par secrets, expéditeur et destinataires doivent l'être aussi.
     em = cfg.setdefault("notifications", {}).setdefault("email", {})
-    for env, key in env_map.items():
-        if os.environ.get(env):
-            em[key] = os.environ[env]
-    if os.environ.get("VMC_SMTP_TO"):
-        em["to_addrs"] = [a.strip() for a in os.environ["VMC_SMTP_TO"].split(",") if a.strip()]
-    if os.environ.get("VMC_SMTP_USER") and os.environ.get("VMC_SMTP_PASSWORD"):
-        em["enabled"] = True
-        em.setdefault("from_addr", em["user"])
+    user, pwd = os.environ.get("VMC_SMTP_USER"), os.environ.get("VMC_SMTP_PASSWORD")
+    if user and pwd:
+        frm = (os.environ.get("VMC_SMTP_FROM") or "").strip()
+        to = [a.strip() for a in (os.environ.get("VMC_SMTP_TO") or "").split(",") if a.strip()]
+        if not frm or not to:
+            print("[config] email ignoré : VMC_SMTP_FROM et/ou VMC_SMTP_TO manquant(s)")
+            em["enabled"] = False
+        else:
+            em.update({"enabled": True, "user": user, "password": pwd,
+                       "from_addr": frm, "to_addrs": to})
+            if os.environ.get("VMC_SMTP_HOST"):
+                em["host"] = os.environ["VMC_SMTP_HOST"]
+    elif em.get("enabled") and "ton.adresse@" in " ".join(
+            [str(em.get("user", "")), str(em.get("from_addr", ""))] + list(em.get("to_addrs") or [])):
+        print("[config] email ignoré : adresses d'exemple dans config.yaml")
+        em["enabled"] = False
     # NB confidentialité : on n'injecte PAS les vraies coordonnées de domicile.
     # Le dashboard est public (GitHub Pages) -> tout 'home' fourni ici serait
     # publié (coordonnées + repère « Chez vous »). On garde donc le placeholder
