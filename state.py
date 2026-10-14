@@ -36,6 +36,9 @@ class StateStore:
 
     # Nombre de passages « rupture » consécutifs avant de réarmer la notif
     # (anti-flap : un 0 isolé de l'API ne doit pas re-déclencher une « 1re dispo »).
+    # Compromis : avec un passage toutes les ~20 min, une vraie rupture n'est
+    # réarmée qu'après ~40 min ; un réassort plus rapide que ça n'est pas notifié
+    # comme « 1re dispo » (il l'est comme réassort s'il dépasse min_restock_delta).
     OOS_RESET_STREAK = 2
 
     def update(self, results: list[Availability], max_notify_km: float | None = None,
@@ -111,6 +114,16 @@ class StateStore:
 
     def set_last_push_ts(self, ts: int) -> None:
         self._data.setdefault(self.NOTIFY_KEY, {})["last_push_ts"] = int(ts)
+
+    def pending_health(self) -> dict:
+        return dict(self._data.get(self.NOTIFY_KEY, {}).get("pending_health", {}))
+
+    def set_pending_health(self, broken, recovered) -> None:
+        n = self._data.setdefault(self.NOTIFY_KEY, {})
+        if broken or recovered:
+            n["pending_health"] = {"broken": list(broken), "recovered": list(recovered)}
+        else:
+            n.pop("pending_health", None)
 
     def mark_notified(self, results) -> None:
         """À appeler APRÈS un envoi réussi. Fige le seuil au niveau notifié

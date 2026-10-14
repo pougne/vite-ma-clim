@@ -116,15 +116,28 @@ def _in_quiet_hours(qcfg: dict | None, now: datetime | None = None) -> bool:
     return (start <= cur < end) if start < end else (cur >= start or cur < end)
 
 
+def _num(v, default, minimum=None):
+    """Lecture robuste d'une clé numérique de config : None/vide/invalide -> default."""
+    if v is None or v == "":
+        return default
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return default
+    if minimum is not None and v < minimum:
+        v = minimum
+    return v
+
+
 def should_push(ntfy_cfg: dict, to_notify: list[Availability], last_push_ts: int,
                 now_ts: int, now: datetime | None = None) -> tuple[bool, str]:
     """Décide si on envoie le push maintenant. Si non, les événements restent
     « à notifier » (mark_notified non appelé) et partiront regroupés plus tard."""
     if _in_quiet_hours(ntfy_cfg.get("quiet_hours"), now):
         return False, "heures silencieuses"
-    cooldown = int(ntfy_cfg.get("notify_cooldown_minutes", 60)) * 60
+    cooldown = int(_num(ntfy_cfg.get("notify_cooldown_minutes", 60), 0, 0) * 60)
     if cooldown and last_push_ts and now_ts - last_push_ts < cooldown:
-        bypass_km = ntfy_cfg.get("cooldown_bypass_km", 50)
+        bypass_km = _num(ntfy_cfg.get("cooldown_bypass_km", 50), 0, 0)
         urgent = any(r.distance_km is None or r.distance_km <= bypass_km for r in to_notify)
         if not urgent:
             left = (cooldown - (now_ts - last_push_ts)) // 60
@@ -141,8 +154,9 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
     ntfy_cfg = cfg.get("notifications", {}).get("ntfy", {}) or {}
     to_notify = state.update(
         results,
-        max_notify_km=ntfy_cfg.get("max_notify_km", 150),
-        min_restock_delta=int(ntfy_cfg.get("min_restock_delta", 3)),
+        # null -> pas de filtre distance ; null -> toute hausse compte (1)
+        max_notify_km=_num(ntfy_cfg.get("max_notify_km", 150), None, 0),
+        min_restock_delta=int(_num(ntfy_cfg.get("min_restock_delta", 3), 1, 1)),
     )
     broken, recovered = state.health_update(expected_names, results)
     national_total = state.history_update(results, int(time.time()))
@@ -171,13 +185,31 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
                 state.save()
             except Exception as e:
                 print(f"[notify] échec dispatch, re-essai au prochain passage: {e}")
+    # Alertes panne/rétablissement : mêmes heures silencieuses. Pendant la
+    # plage, on les met en attente dans l'état et elles partent à la fin.
+    pending = state.pending_health()
+    broken = list(dict.fromkeys(pending.get("broken", []) + broken))
+    recovered = list(dict.fromkeys(pending.get("recovered", []) + recovered))
+    # une enseigne tombée puis rétablie pendant la plage s'annule
+    both = set(broken) & set(recovered)
+    if both:
+        broken = [b for b in broken if b not in both]
+        recovered = [r for r in recovered if r not in both]
     if broken or recovered:
         if broken:
             print(f"[health] enseigne(s) muette(s): {broken}")
-        try:
-            notify.notify_health(cfg["notifications"], broken, recovered)
-        except Exception as e:
-            print(f"[notify] échec health: {e}")
+        if _in_quiet_hours(ntfy_cfg.get("quiet_hours")):
+            print("[notify] health différé (heures silencieuses)")
+            state.set_pending_health(broken, recovered)
+        else:
+            try:
+                notify.notify_health(cfg["notifications"], broken, recovered)
+            except Exception as e:
+                print(f"[notify] échec health: {e}")
+            state.set_pending_health([], [])
+    else:
+        state.set_pending_health([], [])
+    state.save()
 
     # Rendu en dernier et protégé : une erreur de rendu ne doit JAMAIS bloquer les notifs.
     try:

@@ -96,8 +96,9 @@ notifications:
   #     URLs séparées par des virgules (1re = perso, suivantes = partagées).
   ntfy:
     enabled: true
-    # Push priorité MAX si un magasin est à moins de N km (~3 h de route), sinon normale.
-    high_priority_km: 225
+    # Push priorité MAX si un magasin est à moins de N km (ou dispo en ligne),
+    # sinon normale. Aligné sur cooldown_bypass_km : « proche » = urgent.
+    high_priority_km: 50
     # --- Anti-bruit -------------------------------------------------------
     # Ne notifier que les magasins à moins de N km de "home" (les dispos en
     # ligne, sans distance, sont toujours notifiées). Les autres restent
@@ -106,6 +107,7 @@ notifications:
     # Réassort : notifier seulement si la hausse de stock atteint N pièces
     # (la 1re dispo après rupture est toujours notifiée). Les petites hausses
     # se cumulent jusqu'au seuil.
+    # null = toute hausse compte.
     min_restock_delta: 3
     # Au plus 1 push toutes les N minutes ; les dispos du moment sont
     # regroupées dans un seul message au push suivant. 0 = désactivé.
@@ -113,6 +115,10 @@ notifications:
     # Exception au cooldown : un magasin à moins de N km (ou une dispo en
     # ligne) part tout de suite.
     cooldown_bypass_km: 50
+    # NB : cooldown et heures silencieuses s'appliquent à TOUS les canaux
+    # (ntfy ET email), ainsi qu'aux alertes panne/rétablissement d'enseigne.
+    # Anti-flap (code, non configurable) : réarmement après 2 ruptures
+    # consécutives, soit ~40 min à la cadence actuelle.
     # Plage sans push (l'état continue d'être mis à jour ; tout part groupé
     # à la fin de la plage).
     quiet_hours:
