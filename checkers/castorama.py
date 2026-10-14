@@ -9,14 +9,18 @@ Un seul lot d'appels par zone suffit donc — plus besoin de l'API fulfilment-op
 from __future__ import annotations
 
 import math
+import os
 
 from models import Availability, IN_STOCK, OUT_OF_STOCK, UNKNOWN
 from .base import Checker, log
 
 STORES_BATCH = 8
 
-ATMOSPHERE_AUTH = ("Atmosphere atmosphere_app_id="
-                   "kingfisher-o4ITR0sWAyCVQBraQf4Es61jHV3dN4oO9UwJQMrS")
+# Jeton d'application de l'API Kingfisher : lu depuis le secret VMC_CASTO_TOKEN
+# (valeur = l'identifiant après « atmosphere_app_id= »). Jamais en dur dans le code.
+def _atmosphere_auth() -> str | None:
+    tok = (os.environ.get("VMC_CASTO_TOKEN") or "").strip()
+    return f"Atmosphere atmosphere_app_id={tok}" if tok else None
 
 # Magasins proches de chaque (lat,lon) AVEC stock + click&collect, par lots.
 _STORES_BATCH_JS = """
@@ -46,7 +50,9 @@ async ([ean, auth, latlons, batchSize]) => {
       if (cc == null) cc = ((a.clickAndCollect || {}).summary || {}).availability || null;
       out.push({
         id: String(s.id), name: a.name || st.name || null,
-        cp: ((geo.postalCode || '') + '').trim(),
+        cp: ((geo.postalCode || (st.address||{}).postalCode || (a.address||{}).postalCode || '') + '').trim(),
+        city: (geo.city || geo.town || (st.address||{}).city || (st.address||{}).town
+               || (a.address||{}).city || (a.address||{}).town || null),
         lat: (lat != null ? Number(lat) : null), lon: (lon != null ? Number(lon) : null),
         qty: qty, level: level, cc: cc
       });
@@ -81,7 +87,15 @@ class CastoramaChecker(Checker):
     name = "Castorama"
 
     def check(self, context, products, zones):
+        self.partial = False          # True si au moins une zone a échoué ce passage
         results: list[Availability] = []
+        if not _atmosphere_auth():
+            log("Castorama: secret VMC_CASTO_TOKEN absent -> enseigne ignorée ce passage")
+            self.partial = True
+            return [self._mk(products[0].get("label", "Castorama") if products else "Castorama",
+                             str(products[0]["ref"]).split("_")[0] if products else "",
+                             "en-ligne", "Castorama (jeton manquant)", "", UNKNOWN,
+                             "VMC_CASTO_TOKEN manquant", products[0]["url"] if products else "")]
         page = context.new_page()
         try:
             for product in products:
@@ -99,11 +113,13 @@ class CastoramaChecker(Checker):
             page.wait_for_timeout(1200)
         except Exception as e:
             log(f"Castorama: chargement KO {url}: {e}")
+            self.partial = True
             return [self._mk(label, ean, "en-ligne", "Castorama (page KO)", "",
                              UNKNOWN, "page inaccessible", url)]
 
         stores = self._collect_stores(page, ean, zones)
         if not stores:
+            self.partial = True
             return [self._mk(label, ean, "en-ligne", "Castorama (aucun magasin)",
                              "", UNKNOWN, "API magasins sans résultat", url)]
 
@@ -125,15 +141,17 @@ class CastoramaChecker(Checker):
         latlons = [[z["lat"], z["lon"]] for z in zs]
         names = [z.get("name", "") for z in zs]
         try:
-            results = page.evaluate(_STORES_BATCH_JS, [ean, ATMOSPHERE_AUTH, latlons, STORES_BATCH])
+            results = page.evaluate(_STORES_BATCH_JS, [ean, _atmosphere_auth(), latlons, STORES_BATCH])
         except Exception as e:
             log(f"Castorama: stores batch KO: {e}")
+            self.partial = True
             return {}
 
         stores: dict[str, dict] = {}
         for name, res in zip(names, results):
             if res.get("status") != 200:
                 log(f"Castorama: zone {name}: HTTP {res.get('status')} {res.get('error', '')}".strip())
+                self.partial = True
                 continue
             n_before = len(stores)
             for s in res.get("stores", []):
@@ -145,7 +163,8 @@ class CastoramaChecker(Checker):
                     dist = round(_haversine_km(hlat, hlon, s["lat"], s["lon"]), 1)
                 entry = {"name": s.get("name"), "cp": (s.get("cp") or ""),
                          "lat": s.get("lat"), "lon": s.get("lon"), "distance": dist,
-                         "city": name, "qty": s.get("qty"), "level": s.get("level"),
+                         # vraie ville du magasin (API), sinon code postal ; plus le nom de zone
+                         "city": (s.get("city") or s.get("cp") or ""), "zone": name, "qty": s.get("qty"), "level": s.get("level"),
                          "cc": s.get("cc")}
                 prev = stores.get(sid)
                 if prev is None or (entry["distance"] or 1e9) < (prev["distance"] or 1e9):

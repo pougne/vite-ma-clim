@@ -21,7 +21,7 @@ import yaml
 
 import dashboard
 import notify
-from models import Availability, IN_STOCK, OUT_OF_STOCK
+from models import Availability, IN_STOCK, OUT_OF_STOCK, UNKNOWN
 from state import StateStore
 
 HERE = Path(__file__).resolve().parent
@@ -37,6 +37,18 @@ def load_config(path: Path) -> dict:
         cfg.setdefault("notifications", {}).setdefault("ntfy", {})
         cfg["notifications"]["ntfy"]["enabled"] = True
         cfg["notifications"]["ntfy"]["topic_url"] = topic
+    # Email : identifiants SMTP via secrets (jamais dans config.yaml publié).
+    env_map = {"VMC_SMTP_HOST": "host", "VMC_SMTP_USER": "user",
+               "VMC_SMTP_PASSWORD": "password", "VMC_SMTP_FROM": "from_addr"}
+    em = cfg.setdefault("notifications", {}).setdefault("email", {})
+    for env, key in env_map.items():
+        if os.environ.get(env):
+            em[key] = os.environ[env]
+    if os.environ.get("VMC_SMTP_TO"):
+        em["to_addrs"] = [a.strip() for a in os.environ["VMC_SMTP_TO"].split(",") if a.strip()]
+    if os.environ.get("VMC_SMTP_USER") and os.environ.get("VMC_SMTP_PASSWORD"):
+        em["enabled"] = True
+        em.setdefault("from_addr", em["user"])
     # NB confidentialité : on n'injecte PAS les vraies coordonnées de domicile.
     # Le dashboard est public (GitHub Pages) -> tout 'home' fourni ici serait
     # publié (coordonnées + repère « Chez vous »). On garde donc le placeholder
@@ -46,6 +58,10 @@ def load_config(path: Path) -> dict:
     return cfg
 
 
+# Enseignes dont le passage a été partiel (ex. zone Castorama en échec).
+PARTIAL_RETAILERS: set[str] = set()
+
+
 def run_checks(cfg: dict, headful: bool) -> list[Availability]:
     """Lance un vrai passage Playwright sur toutes les enseignes activées."""
     from playwright.sync_api import sync_playwright
@@ -53,6 +69,7 @@ def run_checks(cfg: dict, headful: bool) -> list[Availability]:
     from checkers.base import make_browser_context
 
     zones = cfg["zones"]
+    PARTIAL_RETAILERS.clear()
     results: list[Availability] = []
     expected_names: list[str] = []
     with sync_playwright() as pw:
@@ -70,8 +87,11 @@ def run_checks(cfg: dict, headful: bool) -> list[Availability]:
                 try:
                     res = list(checker.check(context, rcfg["products"], zones))
                     results.extend(res)
+                    if getattr(checker, "partial", False):
+                        PARTIAL_RETAILERS.add(checker.name)
                     print(f"[check] {checker.name}: {len(res)} ligne(s)")
                 except Exception as e:
+                    PARTIAL_RETAILERS.add(checker.name)
                     print(f"[check] {checker.name}: ECHEC -> {e}")
         finally:
             context.close()
@@ -145,11 +165,47 @@ def should_push(ntfy_cfg: dict, to_notify: list[Availability], last_push_ts: int
     return True, ""
 
 
+def _sources_info(cfg: dict, health: dict, now_ts: int | None = None) -> dict:
+    """État des sources pour le bandeau : actif / désactivé / hors service
+    (aucune réponse exploitable depuis `source_down_days` jours)."""
+    from checkers import REGISTRY
+    now_ts = int(now_ts or time.time())
+    days = _num(cfg.get("source_down_days", 7), 7, 0)
+    out = {}
+    for key, rcfg in (cfg.get("retailers") or {}).items():
+        cls = REGISTRY.get(key)
+        name = cls.name if cls else key
+        if not rcfg.get("enabled", True):
+            out[name] = "disabled"
+            continue
+        h = health.get(name, {})
+        last = h.get("last_ok_ts")
+        down = bool(h.get("alerted")) and (last is None or now_ts - int(last) > days * 86400)
+        out[name] = "down" if down else "on"
+    return out
+
+
 def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> None:
     if self_test:
         results, expected_names = self_test_results(), []
     else:
         results, expected_names = run_checks(cfg, headful)
+    partial = set(PARTIAL_RETAILERS) if not self_test else set()
+
+    # Passage partiel : les magasins connus absents de ce passage sont marqués
+    # « inconnu » (affichés comme tels) au lieu de disparaître silencieusement.
+    if partial:
+        seen = {r.key for r in results}
+        for key, e in state.snapshot().items():
+            if key.startswith("__") or key in seen:
+                continue
+            retailer, _, rest = key.partition("|")
+            ref, _, store_key = rest.partition("|")
+            if retailer in partial:
+                results.append(Availability(
+                    retailer, "", ref, store_key, e.get("store_name") or store_key, "",
+                    UNKNOWN, "non vérifié (zone en échec)"))
+        print(f"[pass] passage partiel: {sorted(partial)}")
 
     ntfy_cfg = cfg.get("notifications", {}).get("ntfy", {}) or {}
     to_notify = state.update(
@@ -158,8 +214,16 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
         max_notify_km=_num(ntfy_cfg.get("max_notify_km", 150), None, 0),
         min_restock_delta=int(_num(ntfy_cfg.get("min_restock_delta", 3), 1, 1)),
     )
+    # Purge APRÈS update (checked_at frais pour les magasins vus ce passage ;
+    # checked_at n'est plus committé à chaque run) : enseignes désactivées et
+    # magasins plus vus depuis 14 j.
+    if expected_names and not self_test:
+        removed = state.purge(expected_names)
+        if removed:
+            print(f"[state] purge: {len(removed)} entrée(s)")
     broken, recovered = state.health_update(expected_names, results)
-    national_total = state.history_update(results, int(time.time()))
+    national_total = state.history_update(results, int(time.time()),
+                                          skip_national="Castorama" in partial)
     state.save()
 
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
@@ -220,7 +284,9 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
     # Rendu en dernier et protégé : une erreur de rendu ne doit JAMAIS bloquer les notifs.
     try:
         dash_path = HERE / cfg.get("output", {}).get("dashboard", "dashboard.html")
-        dashboard.render(results, dash_path, home=cfg.get("home"), history=state.history())
+        dashboard.render(results, dash_path, home=cfg.get("home"), history=state.history(),
+                         sources=_sources_info(cfg, state.health()),
+                         min_restock_delta=int(_num(ntfy_cfg.get("min_restock_delta", 3), 1, 1)))
         print(f"[pass] dashboard: {dash_path}")
     except Exception as e:
         print(f"[dashboard] erreur de rendu (sans impact sur les notifs): {e}")

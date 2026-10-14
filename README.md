@@ -1,90 +1,68 @@
-# clim-watch — surveillance dispo Midea PortaSplit
+# Vite Ma Clim — suivi de dispo du Midea PortaSplit
 
-Surveille la disponibilité du climatiseur Midea PortaSplit chez plusieurs
-enseignes (Castorama, Boulanger…), en ligne **et** en magasin dans un rayon
-autour de Paris, puis t'envoie une notification (ntfy/push ou email) dès
-qu'un point de vente passe en stock. Génère aussi un dashboard HTML.
+Surveille le stock du climatiseur **Midea PortaSplit** chez Castorama (stock par
+magasin, partout en France), Optimea (vendeur officiel, en ligne) et Boulanger
+(désactivé pour l'instant), envoie des **push ntfy** (et/ou email) et publie un
+**dashboard** sur GitHub Pages.
 
-## 1. Installation
+## Fonctionnement
 
-```powershell
-cd clim-watch
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python -m playwright install chromium
+- **GitHub Actions** (`.github/workflows/watch.yml`) lance `python clim_watch.py`
+  dans l'image Playwright officielle. La cadence réelle (~20 min) est pilotée par
+  un pinger externe (cron-job.org → `workflow_dispatch`) ; le `schedule` toutes
+  les 2 h n'est qu'un filet de secours.
+- Chaque passage : vérification des enseignes actives → mise à jour de
+  `state.json` → notifications éventuelles → rendu du dashboard
+  (`index.html` + `version.json`) → déploiement Pages.
+- `state.json` n'est committé **que s'il a changé utilement**
+  (`scripts/state_changed.py` ignore les horodatages), avec `pull --rebase` et
+  3 essais ; le job échoue visiblement si le push est impossible.
+- `.github/workflows/tests.yml` lance `pytest` sur chaque pull request.
+
+## Notifications (anti-bruit)
+
+Réglages dans `config.yaml`, bloc `notifications.ntfy` :
+
+| Clé | Défaut | Rôle |
+|---|---|---|
+| `max_notify_km` | 150 | magasins plus loin : suivis en silence (les dispos en ligne sont toujours notifiées) |
+| `min_restock_delta` | 3 | hausse minimale pour un « réassort » (la 1re dispo est toujours notifiée) |
+| `notify_cooldown_minutes` | 60 | au plus 1 push par période, événements regroupés |
+| `cooldown_bypass_km` | 50 | un magasin plus proche passe outre le cooldown |
+| `high_priority_km` | 50 | priorité max du push |
+| `quiet_hours` | 22:00–07:00 | pas de push (ni email, ni alerte panne) ; tout part groupé à la fin |
+
+Anti-flap : un magasin n'est réarmé qu'après 2 passages « rupture » consécutifs.
+Une enseigne muette 3 passages déclenche une alerte « ne répond plus » ; elle est
+affichée « hors service » sur le dashboard après `source_down_days` jours (7).
+
+## Secrets GitHub (Settings → Secrets and variables → Actions)
+
+| Secret | Obligatoire | Contenu |
+|---|---|---|
+| `VMC_NTFY_TOPIC` | oui | URL(s) ntfy, séparées par des virgules (1re = perso) |
+| `VMC_CASTO_TOKEN` | oui | identifiant d'application de l'API Kingfisher (Castorama) ; sans lui Castorama est ignoré |
+| `VMC_SMTP_HOST`, `VMC_SMTP_USER`, `VMC_SMTP_PASSWORD`, `VMC_SMTP_FROM`, `VMC_SMTP_TO` | non | email (Gmail : mot de passe d'application) ; actif si USER + PASSWORD présents |
+
+Ne mettez **aucun** secret dans `config.yaml` : le dépôt et le dashboard sont publics.
+La position de référence (`home`) reste Paris-centre ; chaque visiteur choisit sa
+position sur le site (mémorisée dans son navigateur).
+
+## En local
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt pytest && python -m playwright install chromium
+export VMC_CASTO_TOKEN=...  VMC_NTFY_TOPIC=https://ntfy.sh/mon-sujet
+python clim_watch.py --self-test   # données factices : notif + dashboard
+python clim_watch.py               # un vrai passage
+python -m pytest -q tests
 ```
 
-## 2. Calibrage des sélecteurs (étape clé, à faire UNE fois par enseigne)
+`discover.py <url>` ouvre un navigateur pour recalibrer les sélecteurs d'une
+enseigne (Boulanger notamment avant de la réactiver).
 
-Castorama et Boulanger sont des sites JavaScript protégés anti-bot. L'outil
-pilote un vrai Chromium, mais **les sélecteurs CSS exacts changent d'un site à
-l'autre et dans le temps** : il faut les vérifier une fois.
+## Ajouter une enseigne
 
-```powershell
-python discover.py https://www.boulanger.com/ref/1216685
-```
-
-Le navigateur s'ouvre. Clique sur « disponibilité en magasin », saisis un code
-postal (ex. 59000), laisse la liste des magasins s'afficher, reviens dans la
-console et appuie sur Entrée. Le HTML rendu est capturé dans
-`discover_dump.html`, et tu peux tester des sélecteurs en direct.
-
-Reporte ensuite les bons sélecteurs dans `checkers/boulanger.py` /
-`checkers/castorama.py` (bloc « SÉLECTEURS À VÉRIFIER » en haut du fichier).
-Mêmes étapes pour Castorama avec son URL.
-
-> Astuce : dans les DevTools (F12), onglet **Réseau**, filtre `Fetch/XHR`,
-> puis re-saisis le code postal. Si tu repères une requête qui renvoie du JSON
-> de stock par magasin, c'est encore plus fiable que de lire le DOM — on peut
-> alors appeler cette API directement. Note l'URL, je t'aide à la brancher.
-
-## 3. Configuration
-
-Édite `config.yaml` : zones (codes postaux), produits (ref/url), et au moins
-un canal de notification.
-
-- **ntfy** (recommandé, le plus simple) : installe l'appli ntfy, abonne-toi à
-  un sujet privé (ex. `clim-portasplit-7h2k9`), mets `https://ntfy.sh/<sujet>`
-  dans la config. Zéro inscription.
-- **email** : pour Gmail, génère un *mot de passe d'application* (jamais ton
-  mot de passe principal).
-
-## 4. Test à blanc (sans navigateur)
-
-```powershell
-python clim_watch.py --self-test
-```
-
-Injecte des dispos factices : vérifie que tu reçois bien la notif et que
-`dashboard.html` se génère. Ouvre `dashboard.html` dans ton navigateur.
-
-## 5. Exécution
-
-```powershell
-python clim_watch.py            # un passage
-python clim_watch.py --loop     # tourne en continu (intervalle = config)
-python clim_watch.py --headful  # navigateur visible (debug)
-```
-
-## 6. Planification horaire (Windows Task Scheduler)
-
-Préférable au mode `--loop` (survit aux reboots, veille). Crée une tâche :
-- Déclencheur : toutes les 1 heure.
-- Action : démarrer `run_once.bat` (adapter le chemin).
-- Cocher « Exécuter même si l'utilisateur n'est pas connecté » si besoin.
-
-Les logs s'accumulent dans `clim-watch.log`.
-
-## Notes / limites
-
-- **Anti-bot** : si une enseigne renvoie systématiquement `unknown`, elle te
-  bloque peut-être. Lance en `--headful` pour voir, espace les passages
-  (1h est raisonnable et discret), et n'augmente pas la fréquence sans raison.
-- L'outil ne notifie qu'à la **transition** vers « dispo » (pas de spam tant
-  que ça reste en stock). Supprime `state.json` pour réinitialiser.
-- Ajouter une enseigne = un fichier `checkers/<nom>.py` calqué sur les deux
-  existants + une ligne dans `checkers/__init__.py`.
-- Reste raisonnable sur la fréquence : c'est un usage personnel, pas un
-  martèlement des serveurs.
-```
+Créer `checkers/<nom>.py` sur le modèle d'Optimea, l'enregistrer dans
+`checkers/__init__.py`, puis ajouter un bloc dans `retailers:` de `config.yaml`.
