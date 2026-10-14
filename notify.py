@@ -173,11 +173,13 @@ def notify_ntfy(cfg: dict, results: list[Availability]) -> None:
             print(f"[notify] ntfy partagé ÉCHEC ({t}): {detail or e}")
 
 
-def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> None:
+def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> bool:
     """Alerte « panne » : une ou plusieurs enseignes ne répondent plus (ou se
-    rétablissent). Envoie via ntfy et/ou email, sans jamais lever d'exception."""
+    rétablissent). Envoie via ntfy et/ou email, sans jamais lever d'exception.
+    Renvoie False si un canal actif a échoué (l'appelant garde l'alerte en attente)."""
     if not broken and not recovered:
-        return
+        return True
+    ok = True
     parts = []
     if broken:
         parts.append("⚠️ Ne répond plus : " + ", ".join(broken))
@@ -201,6 +203,7 @@ def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> N
             print(f"[notify] health ntfy: OK ({body!r})")
         except Exception as e:
             print(f"[notify] health ntfy: ECHEC -> {e}")
+            ok = False
 
     em = notif_cfg.get("email", {})
     if em.get("enabled"):
@@ -219,6 +222,8 @@ def notify_health(notif_cfg: dict, broken: list[str], recovered: list[str]) -> N
             print("[notify] health email: OK")
         except Exception as e:
             print(f"[notify] health email: ECHEC -> {e}")
+            ok = False
+    return ok
 
 
 def dispatch(notif_cfg: dict, results: list[Availability]) -> None:

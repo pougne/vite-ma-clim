@@ -34,41 +34,66 @@ class StateStore:
         entry = self._data.get(key)
         return entry["status"] if entry else None
 
-    def update(self, results: list[Availability]) -> list[Availability]:
+    # Nombre de passages « rupture » consécutifs avant de réarmer la notif
+    # (anti-flap : un 0 isolé de l'API ne doit pas re-déclencher une « 1re dispo »).
+    # Compromis : avec un passage toutes les ~20 min, une vraie rupture n'est
+    # réarmée qu'après ~40 min ; un réassort plus rapide que ça n'est pas notifié
+    # comme « 1re dispo » (il l'est comme réassort s'il dépasse min_restock_delta).
+    OOS_RESET_STREAK = 2
+
+    def update(self, results: list[Availability], max_notify_km: float | None = None,
+               min_restock_delta: int = 1) -> list[Availability]:
         """Met à jour l'état et renvoie la liste des résultats à NOTIFIER.
 
-        On notifie quand le statut courant est IN_STOCK et que le statut
-        précédent n'était PAS IN_STOCK (nouvelle dispo).
+        Règles anti-bruit :
+          - 1re dispo (seuil=0) ou dispo booléenne -> notif ;
+          - réassort (hausse de quantité) -> notif seulement si delta >= min_restock_delta ;
+          - magasin plus loin que max_notify_km -> jamais notifié (suivi silencieux) ;
+            les lignes sans distance (en ligne) sont toujours éligibles ;
+          - rupture : réarmement seulement après OOS_RESET_STREAK passages consécutifs ;
+          - statut inconnu : on ne touche à rien (pas de réarmement).
         """
         to_notify: list[Availability] = []
         for r in results:
             prev_entry = self._data.get(r.key, {})
             notified = bool(prev_entry.get("notified", False))      # enseignes sans quantité
             wm = int(prev_entry.get("notified_qty", 0))             # seuil quantité (Castorama)
+            oos = int(prev_entry.get("oos_streak", 0))
             qty = r.quantity
+            far = (max_notify_km is not None and r.distance_km is not None
+                   and r.distance_km > max_notify_km)
 
             if r.status == IN_STOCK:
+                oos = 0
                 if qty is None:
                     # Boulanger / Optimea : pas de quantité -> transition booléenne.
                     if not notified:
-                        to_notify.append(r)
+                        if far:
+                            notified = True          # suivi silencieux
+                        else:
+                            to_notify.append(r)
                 else:
-                    # Castorama : on notifie sur toute HAUSSE de quantité
-                    # (1re dispo si seuil=0, sinon réassort/livraison).
                     if qty > wm:
-                        r.restock = wm > 0
-                        r.delta = qty - wm
-                        to_notify.append(r)
-                        # on n'avance PAS le seuil ici : mark_notified le fera
-                        # après un envoi réussi (sinon on retente au passage suivant).
+                        delta = qty - wm
+                        if far:
+                            wm = qty                 # suivi silencieux, pas de rattrapage
+                        elif wm == 0 or delta >= min_restock_delta:
+                            r.restock = wm > 0
+                            r.delta = delta
+                            to_notify.append(r)
+                            # seuil avancé par mark_notified après envoi réussi
+                        # sinon : petite hausse, on garde le seuil -> les hausses
+                        # successives se cumulent jusqu'à atteindre le seuil.
                     elif qty < wm:
-                        # baisse (achats) : on abaisse le seuil, sans notifier,
-                        # pour qu'un rebond ultérieur compte comme une livraison.
+                        # baisse (achats) : on abaisse le seuil, sans notifier.
                         wm = qty
+            elif r.status == UNKNOWN:
+                pass                                 # mesure non fiable : état inchangé
             else:
-                # Rupture -> on réarme tout (la prochaine dispo re-notifiera).
-                notified = False
-                wm = 0
+                oos += 1
+                if oos >= self.OOS_RESET_STREAK:
+                    notified = False
+                    wm = 0
 
             self._data[r.key] = {
                 "status": r.status,
@@ -77,8 +102,28 @@ class StateStore:
                 "checked_at": r.checked_at,
                 "notified": notified,
                 "notified_qty": wm,
+                "oos_streak": oos,
             }
         return to_notify
+
+    # --- Cadence des push (cooldown) -------------------------------------
+    NOTIFY_KEY = "__notify__"
+
+    def last_push_ts(self) -> int:
+        return int(self._data.get(self.NOTIFY_KEY, {}).get("last_push_ts", 0))
+
+    def set_last_push_ts(self, ts: int) -> None:
+        self._data.setdefault(self.NOTIFY_KEY, {})["last_push_ts"] = int(ts)
+
+    def pending_health(self) -> dict:
+        return dict(self._data.get(self.NOTIFY_KEY, {}).get("pending_health", {}))
+
+    def set_pending_health(self, broken, recovered) -> None:
+        n = self._data.setdefault(self.NOTIFY_KEY, {})
+        if broken or recovered:
+            n["pending_health"] = {"broken": list(broken), "recovered": list(recovered)}
+        else:
+            n.pop("pending_health", None)
 
     def mark_notified(self, results) -> None:
         """À appeler APRÈS un envoi réussi. Fige le seuil au niveau notifié
