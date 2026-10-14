@@ -169,13 +169,16 @@ def test_one_pass_cooldown_defers_far_but_not_near(monkeypatch, tmp_path):
     cw.one_pass(cfg, st, False, False)          # near contourne le cooldown, groupe far2
     assert len(sent) == 2
     assert {r.store_key for r in sent[1]} == {"f2", "n"}
-    # après expiration du cooldown, rien de neuf -> rien
+    # après expiration du cooldown, un nouveau magasin lointain repart tout de suite
     st.set_last_push_ts(int(_t.time()) - 4000)
+    far3 = av(IN_STOCK, 5, dist=140, key="f3")
+    monkeypatch.setattr(cw, "run_checks", lambda cfg, h: ([far1, far2, near, far3], ["Castorama"]))
+    cw.one_pass(cfg, st, False, False)
+    assert len(sent) == 3 and [r.store_key for r in sent[2]] == ["f3"]
 
 
 def test_one_pass_health_deferred_in_quiet_hours(monkeypatch, tmp_path):
     unk = Availability("Castorama", "P", "ean", "en-ligne", "x", "", UNKNOWN)
-    ok = av(IN_STOCK, 5, dist=500, key="far")
     # 3 passages muets la nuit -> alerte panne différée ; 4e muet de jour -> envoyée
     cw, _, health = _setup(monkeypatch, tmp_path, [[unk]] * 4,
                            [True, True, True, False])
@@ -184,4 +187,21 @@ def test_one_pass_health_deferred_in_quiet_hours(monkeypatch, tmp_path):
     for _ in range(4):
         cw.one_pass(_cfg(), st, False, False)
     assert health == [(["Castorama"], [])]
+    assert st.pending_health() == {}
+
+
+def test_health_send_failure_kept_and_retried(monkeypatch, tmp_path):
+    unk = Availability("Castorama", "P", "ean", "en-ligne", "x", "", UNKNOWN)
+    cw, _, _ = _setup(monkeypatch, tmp_path, [[unk]] * 4, [False] * 4)
+    calls = []
+    outcomes = iter([False, True])
+    monkeypatch.setattr(cw.notify, "notify_health",
+                        lambda c, b, r: calls.append((b, r)) or next(outcomes))
+    st = StateStore(tmp_path / "s.json")
+    for _ in range(3):                       # 3e passage muet -> alerte, envoi KO
+        cw.one_pass(_cfg(), st, False, False)
+    assert calls == [(["Castorama"], [])]
+    assert st.pending_health() == {"broken": ["Castorama"], "recovered": []}
+    cw.one_pass(_cfg(), st, False, False)    # re-essai OK
+    assert calls[-1] == (["Castorama"], []) and len(calls) == 2
     assert st.pending_health() == {}

@@ -203,10 +203,16 @@ def one_pass(cfg: dict, state: StateStore, headful: bool, self_test: bool) -> No
             state.set_pending_health(broken, recovered)
         else:
             try:
-                notify.notify_health(cfg["notifications"], broken, recovered)
+                sent_ok = notify.notify_health(cfg["notifications"], broken, recovered) is not False
             except Exception as e:
                 print(f"[notify] échec health: {e}")
-            state.set_pending_health([], [])
+                sent_ok = False
+            if sent_ok:
+                state.set_pending_health([], [])
+            else:
+                # échec d'envoi : on garde l'alerte, re-essai au prochain passage
+                print("[notify] alerte health conservée pour re-essai")
+                state.set_pending_health(broken, recovered)
     else:
         state.set_pending_health([], [])
     state.save()
