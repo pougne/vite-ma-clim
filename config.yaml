@@ -72,7 +72,8 @@ retailers:
         url: "https://www.castorama.fr/climatiseur-portasplit-midea-reversible-3500w/8431312260509_CAFR.prd"
 
   optimea:
-    enabled: true
+    # Désactivé : HTTP 403 depuis GitHub Actions (pare-feu Optimea sur les IP cloud).
+    enabled: false
     products:
       - ref: "MMCS-12HRN8-QRD0"
         label: "Midea PortaSplit (Optimea — officiel)"
