@@ -6,6 +6,7 @@ de "non dispo / inconnu" à "dispo". On évite ainsi le spam à chaque passage.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from models import Availability, IN_STOCK, UNKNOWN
@@ -147,7 +148,7 @@ class StateStore:
     HEALTH_KEY = "__health__"
     HEALTH_THRESHOLD = 3
 
-    def health_update(self, expected_names, results):
+    def health_update(self, expected_names, results, now_ts: int | None = None):
         health = self._data.get(self.HEALTH_KEY, {})
         by: dict[str, list] = {}
         for r in results:
@@ -158,7 +159,9 @@ class StateStore:
             mute = (len(statuses) == 0) or all(st == UNKNOWN for st in statuses)
             h = health.get(name, {"streak": 0, "alerted": False})
             if mute:
-                h["streak"] = h.get("streak", 0) + 1
+                # plafonné au seuil : au-delà, la valeur n'apporte rien et
+                # forcerait un commit de state.json à chaque passage
+                h["streak"] = min(h.get("streak", 0) + 1, self.HEALTH_THRESHOLD)
                 if h["streak"] >= self.HEALTH_THRESHOLD and not h.get("alerted"):
                     broken_now.append(name)
                     h["alerted"] = True
@@ -167,6 +170,7 @@ class StateStore:
                     recovered_now.append(name)
                 h["streak"] = 0
                 h["alerted"] = False
+                h["last_ok_ts"] = int(now_ts or time.time())
             health[name] = h
         self._data[self.HEALTH_KEY] = health
         return broken_now, recovered_now
@@ -186,7 +190,9 @@ class StateStore:
     def history(self) -> dict:
         return self._data.get(self.HISTORY_KEY, {"national": [], "stores": {}})
 
-    def history_update(self, results, now_ts: int) -> int:
+    NATIONAL_MIN_GAP = 3600      # point « témoin » au moins toutes les heures
+
+    def history_update(self, results, now_ts: int, skip_national: bool = False) -> int:
         hist = self._data.setdefault(self.HISTORY_KEY, {"national": [], "stores": {}})
         stores = hist.setdefault("stores", {})
         nat = hist.setdefault("national", [])
@@ -216,8 +222,13 @@ class StateStore:
                     st["series"] = st["series"][-self.STORE_SERIES_MAX:]
             st["last"] = qty
 
-        # cumul national : un point par passage
-        nat.append([now_ts, national_total])
+        # cumul national : un point seulement s'il change (ou toutes les heures),
+        # pour ne pas modifier state.json à chaque passage. Passage partiel
+        # (zone Castorama en échec) -> pas de point : le total serait faux.
+        if skip_national:
+            return nat[-1][1] if nat else national_total
+        if not nat or nat[-1][1] != national_total or now_ts - nat[-1][0] >= self.NATIONAL_MIN_GAP:
+            nat.append([now_ts, national_total])
         if len(nat) > self.NATIONAL_MAX:
             hist["national"] = nat[-self.NATIONAL_MAX:]
 
@@ -229,6 +240,39 @@ class StateStore:
                 del stores[key]
 
         return national_total
+
+    # ------------------------------------------------------------------
+    # Purge : enseignes désactivées / points de vente plus vus depuis 14 j.
+    # ------------------------------------------------------------------
+    PURGE_AFTER = 14 * 24 * 3600
+
+    def purge(self, active_retailers, now_ts: int | None = None) -> list[str]:
+        from datetime import datetime
+        now_ts = int(now_ts or time.time())
+        active = set(active_retailers)
+        removed = []
+        for key in list(self._data):
+            if key.startswith("__"):
+                continue
+            retailer = key.split("|", 1)[0]
+            e = self._data[key]
+            old = False
+            try:
+                ts = datetime.fromisoformat(e.get("checked_at", "")).timestamp()
+                old = now_ts - ts > self.PURGE_AFTER
+            except (TypeError, ValueError):
+                pass
+            if retailer not in active or old:
+                del self._data[key]
+                removed.append(key)
+        health = self._data.get(self.HEALTH_KEY, {})
+        for name in list(health):
+            if name not in active:
+                del health[name]
+        return removed
+
+    def health(self) -> dict:
+        return dict(self._data.get(self.HEALTH_KEY, {}))
 
     def snapshot(self) -> dict[str, dict]:
         return dict(self._data)

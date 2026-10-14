@@ -97,7 +97,150 @@ def _fmt_ts(ts) -> str:
         return ""
 
 
-def _sparkline(series) -> str:
+
+_CSS = r"""
+  :root {
+    --primary:#5561d9; --primary-dark:#414dc4; --primary-tint:#edeefb;
+    --secondary:#ed505b; --success:#6db455; --success-dark:#4a9e34; --success-tint:#eef6e9;
+    --bg:#f4f5fb; --card:#ffffff; --line:#e7e9f2; --txt:#23262f; --mut:#737a8c;
+    font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { color-scheme:light dark; }
+  body { margin:0; background:var(--bg); color:var(--txt); }
+  .topbar { background:var(--card); border-bottom:1px solid var(--line); }
+  .topbar .in { max-width:1100px; margin:0 auto; padding:16px 20px; display:flex;
+                 align-items:center; justify-content:space-between; }
+  .logo { font-size:22px; font-weight:800; letter-spacing:-.5px; white-space:nowrap; }
+  .logo .a { color:var(--txt); } .logo .b { color:var(--primary); }
+  .logo-sub { color:var(--mut); font-size:10.5px; font-weight:700; letter-spacing:.4px;
+               text-transform:uppercase; margin-top:1px; }
+  .topbar .upd { color:var(--mut); font-size:12px; }
+  .hero { max-width:1100px; margin:0 auto; padding:30px 20px 8px; }
+  .hero h1 { font-size:26px; margin:0 0 6px; font-weight:800; letter-spacing:-.4px; }
+  .hero p { margin:0; color:var(--mut); font-size:15px; }
+  .hero h1 .hl { color:var(--success-dark); }
+  .chips { display:flex; gap:10px; max-width:1100px; margin:18px auto 0; padding:0 20px; flex-wrap:wrap; }
+  .chip { flex:1 1 150px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px;
+           font-size:13px; line-height:1.25; color:var(--mut); box-shadow:0 1px 2px rgba(20,23,40,.04); }
+  .chip b { display:block; font-size:20px; color:var(--txt); line-height:1.1; margin-bottom:2px; }
+  .chip.go b { color:var(--success-dark); }
+  #map { height:360px; max-width:1100px; margin:20px auto 0; border-radius:18px;
+          border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,23,40,.05); }
+  .leaflet-popup-content { font-size:13px; }
+  .sec { max-width:1100px; margin:20px auto 0; padding:0; }
+  .sec-h { max-width:1100px; margin:0 auto; padding:0 20px; font-size:15px; font-weight:800;
+            letter-spacing:-.2px; display:flex; align-items:center; gap:8px; color:var(--txt); }
+  .sec-n { background:var(--primary-tint); color:var(--primary-dark); border-radius:999px;
+            padding:2px 9px; font-size:12px; font-weight:800; }
+  details.others { margin-bottom:40px; }
+  details.others summary { cursor:pointer; list-style:none; user-select:none; }
+  details.others summary::-webkit-details-marker { display:none; }
+  details.others summary::after { content:'\25BE'; color:var(--mut); margin-left:4px;
+            transition:transform .15s; display:inline-block; }
+  details.others[open] summary::after { transform:rotate(180deg); }
+  details.others .grid { margin-top:12px; }
+  .health { max-width:1100px; margin:10px auto 0; padding:0 20px; font-size:12px; color:var(--mut); }
+  .h-ok { color:var(--success-dark); font-weight:700; }
+  .h-ko { color:#c0303b; font-weight:700; }
+  .stale { max-width:1060px; margin:12px auto 0; padding:10px 14px; border-radius:12px;
+            background:#fff4d6; color:#9a6b00; font-size:13px; font-weight:600; }
+  .grid { max-width:1100px; margin:14px auto 26px; padding:0 20px;
+           display:grid; grid-template-columns:repeat(auto-fill,minmax(208px,1fr)); gap:11px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:11px 13px;
+           box-shadow:0 1px 5px rgba(20,23,40,.06); display:flex; flex-direction:column; gap:5px; }
+  .card--ok { border:1.5px solid var(--success); box-shadow:0 4px 18px rgba(109,180,85,.18); }
+  .card-head { display:flex; align-items:center; justify-content:space-between; }
+  .km { color:var(--mut); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .badge { padding:2px 8px; border-radius:7px; font-size:10px; font-weight:800; color:#fff; letter-spacing:.3px; }
+  .b-casto { background:#0a8a3f; } .b-boul { background:#e2541d; }
+  .b-optimea { background:#5561d9; } .b-other { background:#737a8c; }
+  .card-title { font-size:14.5px; margin:1px 0 0; font-weight:700; line-height:1.2; }
+  .card-city { color:var(--mut); font-size:11.5px; }
+  .state { align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:10.5px; font-weight:800; }
+  .state--ok { background:var(--success-tint); color:var(--success-dark); }
+  .state--no { background:#f1f2f6; color:#8b92a3; }
+  .state--unk { background:#fdf2e2; color:#c77d22; }
+  .tags { display:flex; flex-wrap:wrap; gap:4px; }
+  .tag { padding:2px 7px; border-radius:6px; font-size:10px; font-weight:600; }
+  .tag--good { background:var(--success-tint); color:var(--success-dark); }
+  .tag--mut { background:#f1f2f6; color:#8b92a3; }
+  .badges { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 2px; }
+  .tag--new { background:#fff4d6; color:#9a6b00; }
+  .tag--restock { background:var(--primary-tint); color:var(--primary-dark); }
+  .tag--retrait { background:var(--success-tint); color:var(--success-dark); }
+  .tag--eta { background:#fde8e9; color:#c0303b; }
+  .card--new { box-shadow:0 0 0 2px #ffd96b, 0 6px 20px rgba(255,193,7,.28); }
+  .card-btns { display:flex; gap:6px; margin-top:4px; }
+  .btn { flex:1; text-align:center; padding:6px 10px; border-radius:9px; font-size:12px;
+          font-weight:700; text-decoration:none; }
+  .btn--primary { background:var(--primary); color:#fff; }
+  .btn--primary:hover { background:var(--primary-dark); }
+  .btn--ghost { background:var(--card); color:var(--primary); border:1.5px solid var(--primary-tint); }
+  .btn--ghost:hover { border-color:var(--primary); }
+  .empty { text-align:center; color:var(--mut); }
+  footer { text-align:center; color:var(--mut); font-size:12px; padding:0 20px 40px; }
+  .geo { max-width:1100px; margin:18px auto 0; padding:0 20px; display:flex; align-items:center;
+          gap:8px; flex-wrap:wrap; }
+  .geo-ic { font-size:16px; }
+  .geo input { flex:0 1 240px; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
+                font-size:14px; background:var(--card); color:var(--txt); }
+  .geo-btn { padding:9px 14px; border:none; border-radius:10px; background:var(--primary); color:#fff;
+              font-weight:700; font-size:14px; cursor:pointer; }
+  .geo-btn:hover { background:var(--primary-dark); }
+  .geo-hint { color:var(--mut); font-size:13px; }
+  .geo-hint b { color:var(--txt); }
+  .geo-reset { color:var(--primary); font-size:13px; text-decoration:none; margin-left:auto; }
+  .geo-reset:hover { text-decoration:underline; }
+  .natchart { max-width:1100px; margin:18px auto 0; padding:14px 18px; background:var(--card);
+               border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 4px rgba(20,23,40,.05); }
+  .natchart h2 { font-size:13px; color:var(--mut); margin:0; font-weight:700; }
+  .natchart .natnote { font-weight:500; }
+  .natchart .big { font-size:26px; font-weight:800; margin:2px 0 6px; }
+  .natchart .natrange { font-size:12px; font-weight:600; color:var(--mut); margin-left:10px; }
+  .natsvg { width:100%; height:120px; display:block; }
+  .natwrap { position:relative; touch-action:pan-y; }
+  .natline { position:absolute; top:0; bottom:0; width:1px; background:var(--primary);
+              opacity:.45; display:none; pointer-events:none; }
+  .natdot { position:absolute; width:9px; height:9px; margin:-5px 0 0 -5px; border-radius:50%;
+             background:var(--primary); border:2px solid var(--card);
+             box-shadow:0 1px 4px rgba(0,0,0,.3); display:none; pointer-events:none; }
+  .nattip { position:absolute; top:2px; background:rgba(35,38,47,.96); color:#fff;
+             font-size:12px; font-weight:700; padding:4px 8px; border-radius:8px;
+             white-space:nowrap; display:none; pointer-events:none; z-index:5; }
+  .natsub { color:var(--mut); font-size:11px; margin-top:4px; }
+  .seen { color:var(--success-dark); font-size:10.5px; font-weight:700; }
+  .spark { display:block; }
+  @media (max-width:480px) {
+    .topbar .in { flex-direction:column; align-items:flex-start; gap:2px; padding:12px 16px; }
+    .hero { padding:22px 16px 6px; }
+    .hero h1 { font-size:21px; }
+    .hero p { font-size:14px; }
+    .chips { gap:8px; padding:0 16px; flex-wrap:nowrap; }
+    .chip { flex:1 1 0; min-width:0; padding:10px 9px; font-size:11px; border-radius:12px; }
+    .chip b { font-size:18px; }
+    .natchart { margin:14px 16px 0; padding:12px 14px; }
+    .natchart .big { font-size:22px; }
+    .grid { padding:0 16px; gap:10px; grid-template-columns:1fr 1fr; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0f1117; --card:#1a1d27; --line:#2a2e3c; --txt:#e8eaf0; --mut:#9aa1b2;
+      --primary-tint:#262b52; --primary-dark:#8b95f0;
+      --success-dark:#7bc862; --success-tint:#1b2a17;
+    }
+    .state--no { background:#262a36; color:#9aa1b2; }
+    .state--unk { background:#3a2f12; color:#e0b15a; }
+    .tag--mut { background:#262a36; color:#9aa1b2; }
+    .tag--new { background:#3a2f12; color:#e6c155; }
+    .tag--eta { background:#3a1f22; color:#f0a0a8; }
+    .stale { background:#3a2f12; color:#e6c155; }
+    .b-other { background:#4a5163; }
+  }
+"""
+
+
+def _sparkline(series, W: int = 64, H: int = 22) -> str:
     pts = [(int(t), int(v)) for t, v in (series or []) if v is not None]
     if len(pts) < 2:
         return ""
@@ -105,75 +248,87 @@ def _sparkline(series) -> str:
     ts0, ts1 = pts[0][0], pts[-1][0]
     vmax = max(v for _, v in pts) or 1
     span = (ts1 - ts0) or 1
-    W, H = 84, 22
     coords = " ".join(
         f"{(t - ts0) / span * (W - 2) + 1:.1f},{H - 2 - (v / vmax) * (H - 4):.1f}"
         for t, v in pts)
-    return (f'<svg class="spark" viewBox="0 0 {W} {H}" width="{W}" height="{H}">'
+    return (f'<svg class="spark" viewBox="0 0 {W} {H}" width="{W}" height="{H}" aria-hidden="true">'
             f'<polyline points="{coords}" fill="none" stroke="#4a9e34" '
             'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>')
 
 
-def _national_chart(series) -> str:
-    pts = [(int(t), int(v)) for t, v in (series or []) if v is not None]
+def _national_chart(series, min_restock_delta: int = 3) -> str:
+    """Courbe du stock cumulé : axe Y gradué, repères de dates, bascule
+    24 h / 7 j / tout, points de réassort (hausse >= min_restock_delta).
+    Le tracé est fait côté navigateur (SVG) à partir de la série complète."""
+    pts = [[int(t), int(v)] for t, v in (series or []) if v is not None]
     cur = pts[-1][1] if pts else 0
-    head = ('<div class="natchart"><h2>Stock cumulé Castorama '
-            '<span class="natnote">(magasins suivis)</span></h2>')
+    head = ('<section class="natchart" id="natchart"><div class="nat-top"><div>'
+            '<h2>Stock cumulé Castorama <span class="natnote">(magasins suivis)</span></h2>'
+            f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}</div></div>')
     if len(pts) < 2:
-        return (head + f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}</div>'
-                '<div class="natsub">Historique en cours de constitution…</div></div>')
-    if len(pts) > 250:
-        step = len(pts) / 250.0
-        pts = [pts[int(i * step)] for i in range(250)] + [pts[-1]]
-    ts0, ts1 = pts[0][0], pts[-1][0]
-    vmax = max(v for _, v in pts) or 1
-    vmin = min(v for _, v in pts)
-    span = (ts1 - ts0) or 1
-    ups = sum(1 for i in range(1, len(pts)) if pts[i][1] - pts[i-1][1] >= 2)
-    W, H, pad = 1000, 120, 6
-    def X(t): return pad + (t - ts0) / span * (W - 2 * pad)
-    def Y(v): return H - pad - (v / vmax) * (H - 2 * pad - 14)
-    line = " ".join(f"{X(t):.1f},{Y(v):.1f}" for t, v in pts)
-    area = f"{pad:.0f},{H - pad} " + line + f" {W - pad},{H - pad}"
-    natpoints = [{"t": t, "v": v, "fx": round(X(t) / W, 4), "fy": round(Y(v) / H, 4)}
-                 for t, v in pts]
-    script = (
-        "<script>(function(){var P=" + json.dumps(natpoints) + ";"
-        "var w=document.getElementById('natwrap');if(!w||P.length<2)return;"
-        "var ln=document.getElementById('natline'),dt=document.getElementById('natdot'),"
-        "tp=document.getElementById('nattip');"
-        "function fmt(t){return new Date(t*1000).toLocaleString('fr-FR',"
-        "{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}"
-        "function show(cx){var r=w.getBoundingClientRect();var f=(cx-r.left)/r.width;"
-        "if(f<0)f=0;if(f>1)f=1;var b=0,bd=2;for(var i=0;i<P.length;i++){"
-        "var d=Math.abs(P[i].fx-f);if(d<bd){bd=d;b=i;}}var p=P[b];"
-        "var x=p.fx*r.width,y=p.fy*r.height;"
-        "ln.style.left=x+'px';ln.style.display='block';"
-        "dt.style.left=x+'px';dt.style.top=y+'px';dt.style.display='block';"
-        "tp.textContent=fmt(p.t)+' · '+p.v+' pièce'+(p.v>1?'s':'');"
-        "tp.style.display='block';var tw=tp.offsetWidth,tx=x-tw/2;"
-        "if(tx<2)tx=2;if(tx+tw>r.width-2)tx=r.width-tw-2;tp.style.left=tx+'px';}"
-        "function hide(){ln.style.display='none';dt.style.display='none';tp.style.display='none';}"
-        "w.addEventListener('mousemove',function(e){show(e.clientX);});"
-        "w.addEventListener('mouseleave',hide);"
-        "w.addEventListener('touchstart',function(e){show(e.touches[0].clientX);},{passive:true});"
-        "w.addEventListener('touchmove',function(e){show(e.touches[0].clientX);},{passive:true});"
-        "w.addEventListener('touchend',hide);})();</script>"
-    )
-    return (
-        head +
-        f'<div class="big">{cur} pièce{"s" if cur != 1 else ""}'
-        f'<span class="natrange">min {vmin} · max {vmax}</span></div>'
-        '<div class="natwrap" id="natwrap">'
-        f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" class="natsvg">'
-        f'<polygon points="{area}" fill="rgba(85,97,217,.12)"/>'
-        f'<polyline points="{line}" fill="none" stroke="#5561d9" stroke-width="2" '
-        'stroke-linejoin="round" stroke-linecap="round"/></svg>'
-        '<div class="natline" id="natline"></div>'
-        '<div class="natdot" id="natdot"></div>'
-        '<div class="nattip" id="nattip"></div></div>'
-        f'<div class="natsub">{_fmt_ts(ts0)} → {_fmt_ts(ts1)} · {ups} réassort(s) détecté(s)</div></div>'
-        + script)
+        return (head + '</div><div class="natsub">Historique en cours de constitution…</div></section>')
+    toggle = ('<div class="seg" id="natseg" role="group" aria-label="Période">'
+              '<button data-r="86400">24 h</button><button data-r="604800" class="on">7 j</button>'
+              '<button data-r="0">tout</button></div>')
+    script = """<script>(function(){
+var P=__P__, D=__D__, svg=document.getElementById('natsvg'), sub=document.getElementById('natsub'),
+    tip=document.getElementById('nattip'), wrap=document.getElementById('natwrap');
+if(!svg) return;
+var W=1000,H=200,L=44,R=10,T=10,B=26, cur=[];
+function nice(v){ if(v<=0) return 1; var e=Math.pow(10,Math.floor(Math.log10(v))), f=v/e;
+  return (f<=1?1:f<=2?2:f<=5?5:10)*e; }
+function fmtD(t,r){ var d=new Date(t*1000);
+  return r&&r<=86400 ? d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+                     : d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}); }
+function el(n,a,txt){ var e=document.createElementNS('http://www.w3.org/2000/svg',n);
+  for(var k in a) e.setAttribute(k,a[k]); if(txt!=null) e.textContent=txt; return e; }
+function draw(range){
+  var t1=P[P.length-1][0], t0=range? t1-range : P[0][0];
+  cur=P.filter(function(p){return p[0]>=t0;}); if(cur.length<2) cur=P.slice(-2);
+  t0=cur[0][0];
+  var vmax=0; cur.forEach(function(p){ if(p[1]>vmax) vmax=p[1]; });
+  var step=nice(vmax/4||1), top=Math.max(step, Math.ceil(vmax/step)*step), span=(t1-t0)||1;
+  function X(t){ return L+(t-t0)/span*(W-L-R); } function Y(v){ return H-B-(v/top)*(H-B-T); }
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  for(var y=0;y<=top+1e-9;y+=step){
+    svg.appendChild(el('line',{x1:L,x2:W-R,y1:Y(y),y2:Y(y),'class':'grid-l'}));
+    svg.appendChild(el('text',{x:L-6,y:Y(y)+4,'text-anchor':'end','class':'ax'},String(Math.round(y))));
+  }
+  for(var i=0;i<=5;i++){ var tt=t0+span*i/5;
+    svg.appendChild(el('text',{x:X(tt),y:H-6,'text-anchor':i==0?'start':i==5?'end':'middle','class':'ax'},fmtD(tt,range))); }
+  var line=cur.map(function(p){return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1);}).join(' ');
+  svg.appendChild(el('polygon',{points:X(t0)+','+Y(0)+' '+line+' '+X(t1)+','+Y(0),'class':'area'}));
+  svg.appendChild(el('polyline',{points:line,'class':'ln'}));
+  var ups=0;
+  for(var j=1;j<cur.length;j++){ var d=cur[j][1]-cur[j-1][1];
+    if(d>=D){ ups++; var c=el('circle',{cx:X(cur[j][0]),cy:Y(cur[j][1]),r:4,'class':'up'});
+      c.appendChild(el('title',{},fmtD(cur[j][0])+' · +'+d+' pièces')); svg.appendChild(c); } }
+  if(sub) sub.textContent=fmtD(t0)+' → '+fmtD(t1)+' · '+ups+' réassort(s) (≥ +'+D+')';
+  svg._X=X; svg._Y=Y;
+}
+var seg=document.getElementById('natseg'), r0=604800;
+try{ var sv=localStorage.getItem('vmc_natrange'); if(sv!==null) r0=parseInt(sv,10); }catch(e){}
+function setR(r){ [].forEach.call(seg.querySelectorAll('button'),function(b){ b.classList.toggle('on', parseInt(b.dataset.r,10)===r); });
+  draw(r); try{ localStorage.setItem('vmc_natrange',String(r)); }catch(e){} }
+seg.addEventListener('click',function(e){ var b=e.target.closest('button'); if(b) setR(parseInt(b.dataset.r,10)); });
+setR(r0);
+function show(cx){ var rc=wrap.getBoundingClientRect(), fx=(cx-rc.left)/rc.width*W, best=cur[0], bd=1e9;
+  cur.forEach(function(p){ var d=Math.abs(svg._X(p[0])-fx); if(d<bd){bd=d;best=p;} });
+  tip.textContent=new Date(best[0]*1000).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+best[1]+' pièces';
+  tip.style.display='block'; var x=svg._X(best[0])/W*rc.width, tw=tip.offsetWidth;
+  tip.style.left=Math.max(2,Math.min(rc.width-tw-2,x-tw/2))+'px'; }
+wrap.addEventListener('mousemove',function(e){show(e.clientX);});
+wrap.addEventListener('mouseleave',function(){tip.style.display='none';});
+wrap.addEventListener('touchmove',function(e){show(e.touches[0].clientX);},{passive:true});
+wrap.addEventListener('touchend',function(){tip.style.display='none';});
+})();</script>"""
+    script = script.replace("__P__", json.dumps(pts)).replace("__D__", str(int(min_restock_delta)))
+    return (head + toggle + '</div>'
+            '<div class="natwrap" id="natwrap">'
+            '<svg id="natsvg" viewBox="0 0 1000 200" preserveAspectRatio="none" role="img" '
+            'aria-label="Évolution du stock national" class="natsvg"></svg>'
+            '<div class="nattip" id="nattip"></div></div>'
+            '<div class="natsub" id="natsub"></div></section>' + script)
 
 
 def _trend(series) -> int:
@@ -182,6 +337,11 @@ def _trend(series) -> int:
     if len(pts) < 2:
         return 0
     return 1 if pts[-1] > pts[-2] else (-1 if pts[-1] < pts[-2] else 0)
+
+
+def _last_delta(series) -> int:
+    pts = [v for _, v in (series or []) if v is not None]
+    return (pts[-1] - pts[-2]) if len(pts) >= 2 else 0
 
 
 def _eta(series) -> str:
@@ -209,55 +369,87 @@ def _eta(series) -> str:
     return f"épuisé dans ~{round(eta / 24)} j"
 
 
-def _card(r: Availability, hinfo: dict | None = None, now_ts: int | None = None) -> str:
+def _title(r: Availability) -> str:
+    """Nom du point de vente sans l'enseigne (« Castorama Créteil » -> « Créteil »)."""
+    name = (r.store_name or "").strip()
+    if r.retailer and name.lower().startswith(r.retailer.lower()):
+        name = name[len(r.retailer):].strip(" -—") or name
+    return name
+
+
+def _summary_line(r: Availability, series) -> str:
+    """Une seule ligne : « 14 pièces · Retrait 2h ✓ · ⏳ épuisé dans ~5 h »."""
+    if r.status == IN_STOCK:
+        bits = []
+        if isinstance(r.quantity, int) and r.quantity > 0:
+            bits.append(f"{r.quantity} pièce{'s' if r.quantity > 1 else ''}")
+        elif r.distance_km is None:
+            bits.append("en stock en ligne")
+        if r.detail and "Retrait 2h \u2713" in r.detail:
+            bits.append("Retrait 2h \u2713")
+        eta = _eta(series)
+        if eta:
+            bits.append(f"\u23f3 {eta}")
+        return " · ".join(bits) or "disponible"
+    if r.status == OUT_OF_STOCK:
+        return "Rupture"
+    return "État inconnu"
+
+
+def _card(r: Availability, hinfo: dict | None = None, now_ts: int | None = None,
+          min_restock_delta: int = 3) -> str:
     ok = r.status == IN_STOCK
-    if ok:
-        statetag = '<span class="state state--ok">Disponible</span>'
-    elif r.status == OUT_OF_STOCK:
-        statetag = '<span class="state state--no">Indisponible</span>'
-    else:
-        statetag = '<span class="state state--unk">Inconnu</span>'
-    dist = _dist(r)
-    btns = []
-    if r.url:
-        btns.append(f'<a class="btn btn--primary" href="{html.escape(r.url)}" target="_blank">Voir la fiche</a>')
-    if r.lat is not None and r.lon is not None:
-        btns.append(f'<a class="btn btn--ghost" href="{_gmaps(r.lat, r.lon)}" target="_blank">Itin\u00e9raire</a>')
-    rl = r.retailer.lower()
-    bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
-            else "b-optimea" if rl.startswith("optimea") else "b-other")
-    geo = f' data-lat="{r.lat}" data-lon="{r.lon}"' if (r.lat is not None and r.lon is not None) else ""
     series = hinfo.get("series") if hinfo else None
     first_seen = hinfo.get("first_seen") if hinfo else None
     is_new = bool(ok and first_seen and now_ts and (now_ts - int(first_seen)) <= 3600)
-    is_restock = bool(ok and not is_new and _trend(series) > 0)
-    retrait2h = bool(ok and r.detail and "Retrait 2h \u2713" in r.detail)
-    eta = _eta(series) if ok else ""
-    badges = []
+    delta = _last_delta(series)
+    tag = ""
     if is_new:
-        badges.append('<span class="tag tag--new">\u2728 Nouveau</span>')
-    if is_restock:
-        badges.append('<span class="tag tag--restock">\U0001F501 R\u00e9assort</span>')
-    if retrait2h:
-        badges.append('<span class="tag tag--retrait">\U0001F6D2 Retrait 2h</span>')
-    if eta:
-        badges.append(f'<span class="tag tag--eta">\u23f3 {eta}</span>')
-    extra = ('<div class="badges">' + "".join(badges) + "</div>") if badges else ""
-    if ok and first_seen:
-        extra += f'<div class="seen">en stock depuis {_fmt_ts(first_seen)}</div>'
-    extra += _sparkline(series)
+        tag = '<span class="tag tag--new">Nouveau</span>'
+    elif ok and delta >= min_restock_delta:
+        tag = f'<span class="tag tag--restock">Réassort +{delta}</span>'
+    elif ok and delta > 0:
+        tag = '<span class="tag tag--up">En hausse</span>'
+    rl = r.retailer.lower()
+    bcls = ("b-casto" if rl.startswith("casto") else "b-boul" if rl.startswith("boul")
+            else "b-optimea" if rl.startswith("optimea") else "b-other")
+    has_geo = r.lat is not None and r.lon is not None
+    geo = f' data-lat="{r.lat}" data-lon="{r.lon}"' if has_geo else ""
+    km = "" if r.distance_km is None else f"{r.distance_km:.0f}"
+    title = _title(r)
+    line = _summary_line(r, series)
+    qty = r.quantity if isinstance(r.quantity, int) else ""
+    url = html.escape(r.url or "", quote=True)
+    dir_url = _gmaps(r.lat, r.lon) if has_geo else ""
+    link = (f'<a class="card-link" href="{url}" target="_blank" rel="noopener" '
+            f'aria-label="Voir la fiche {html.escape(title)}"></a>') if r.url else ""
+    itin = (f'<a class="itin" href="{dir_url}" target="_blank" rel="noopener" title="Itinéraire" '
+            'aria-label="Itinéraire">\U0001F9ED</a>') if has_geo else ""
+    sub = html.escape(r.store_city or "") if r.store_city and r.store_city != "—" else (
+        "en ligne" if r.distance_km is None else "")
+    cls = "card" + (" card--ok" if ok else "") + (" card--new" if is_new else "")
     return (
-        f'<article class="card{" card--ok" if ok else ""}{" card--new" if is_new else ""}" data-ok="{1 if ok else 0}"{geo}>'
-        f'<div class="card-head"><span class="badge {bcls}">{html.escape(r.retailer)}</span>'
-        f'<span class="km">{dist}</span></div>'
-        f'<h3 class="card-title">{html.escape(r.store_name)}</h3>'
-        f'<div class="card-city">{html.escape(r.store_city or "")}</div>'
-        f'{statetag}'
-        f'{_detail_pills(r.detail)}'
-        f'{extra}'
-        f'<div class="card-btns">{"".join(btns)}</div>'
+        f'<article class="{cls}" data-ok="{1 if ok else 0}"{geo} data-km="{km}" '
+        f'data-name="{html.escape(title, quote=True)}" data-qty="{qty}" '
+        f'data-url="{url}" data-dir="{dir_url}">'
+        f'{link}'
+        f'<div class="c-main">'
+        f'<div class="c-top"><span class="badge {bcls}">{html.escape(r.retailer)}</span>{tag}</div>'
+        f'<h3 class="card-title">{html.escape(title)}</h3>'
+        f'<div class="c-line">{html.escape(line)}</div>'
+        f'<div class="card-city">{sub}</div>'
+        f'</div>'
+        f'<div class="c-side"><span class="km">{km + " km" if km else ""}</span>'
+        f'{_sparkline(series)}{itin}</div>'
         f'</article>'
     )
+
+
+_LEAFLET_JS = ('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" '
+               'integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" '
+               'crossorigin=""></script>')
+_LEAFLET_CSS = ('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" '
+                'integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>')
 
 
 def _map_section(results, home, hist_stores=None) -> str:
@@ -267,10 +459,13 @@ def _map_section(results, home, hist_stores=None) -> str:
         if r.lat is None or r.lon is None:
             continue
         h = hist_stores.get(r.key) or {}
+        # Échappement côté Python : les popups Leaflet sont du HTML.
         points.append({
-            "lat": r.lat, "lon": r.lon, "name": r.store_name, "city": r.store_city,
+            "lat": r.lat, "lon": r.lon,
+            "name": html.escape(r.store_name or ""), "city": html.escape(r.store_city or ""),
             "dist": (round(r.distance_km) if r.distance_km is not None else None),
-            "status": r.status, "url": r.url, "detail": r.detail,
+            "status": r.status, "url": html.escape(r.url or "", quote=True),
+            "detail": html.escape(r.detail or ""),
             "qty": (r.quantity if isinstance(r.quantity, int) else 0),
             "trend": _trend(h.get("series")),
         })
@@ -286,11 +481,11 @@ def _map_section(results, home, hist_stores=None) -> str:
         '<a id="vmc-reset" class="geo-reset" href="#">r\u00e9initialiser</a>'
         '</div>'
     )
-    script = """
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    script = _LEAFLET_JS + """
 <script>
 (function(){
   var pts = __POINTS__, home = __HOME__;
+  if(typeof L==='undefined') return;
   var map = L.map('map', {scrollWheelZoom:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {maxZoom:19, attribution:'\u00a9 OpenStreetMap'}).addTo(map);
@@ -300,10 +495,10 @@ def _map_section(results, home, hist_stores=None) -> str:
     var ok = p.status === 'in_stock';
     var rad=4, stroke='#b9c0cf', fill='#cdd3df', op=0.6;
     if(ok){
-      rad = Math.max(7, Math.min(18, 6 + Math.sqrt((p.qty||1)) * 2.2));  // taille = quantité
-      if(p.trend > 0){ stroke='#2e9e2e'; fill='#46c93a'; }        // hausse / vient d'arriver
-      else if(p.trend < 0){ stroke='#d98a00'; fill='#f0b429'; }   // en baisse
-      else { stroke='#4a9e34'; fill='#6db455'; }                  // stable
+      rad = Math.max(7, Math.min(18, 6 + Math.sqrt((p.qty||1)) * 2.2));
+      if(p.trend > 0){ stroke='#2e9e2e'; fill='#46c93a'; }
+      else if(p.trend < 0){ stroke='#d98a00'; fill='#f0b429'; }
+      else { stroke='#4a9e34'; fill='#6db455'; }
       op=0.95;
     }
     var m = L.circleMarker([p.lat, p.lon], {
@@ -312,14 +507,7 @@ def _map_section(results, home, hist_stores=None) -> str:
     markers.push({m:m, p:p, ok:ok});
   });
   var homeMarker = null;
-
-  function rad(d){ return d*Math.PI/180; }
-  function hav(la1,lo1,la2,lo2){
-    var R=6371, dLa=rad(la2-la1), dLo=rad(lo2-lo1);
-    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(rad(la1))*Math.cos(rad(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);
-    return 2*R*Math.asin(Math.sqrt(a));
-  }
-  function fmtKm(d){ if(d==null||!isFinite(d)) return ''; return (d<10? d.toFixed(1): Math.round(d))+' km'; }
+  var hav = window.vmcHav, fmtKm = window.vmcFmtKm;
 
   function refreshPopups(o){
     markers.forEach(function(it){
@@ -327,28 +515,10 @@ def _map_section(results, home, hist_stores=None) -> str:
       var d = o ? hav(o.lat,o.lon,p.lat,p.lon) : p.dist;
       var dir='https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lon;
       var pre = fmtKm(d); pre = pre ? pre+' \u00b7 ' : '';
+      // champs déjà échappés côté Python
       it.m.bindPopup('<b>'+p.name+'</b><br>'+pre+(p.city||'')+'<br>'+(p.detail||'')
-        +'<br><a href="'+p.url+'" target="_blank">fiche</a> \u00b7 '
-        +'<a href="'+dir+'" target="_blank">itin\u00e9raire</a>');
-    });
-  }
-
-  function sortCards(o){
-    ['grid','grid2'].forEach(function(gid){
-    var grid=document.getElementById(gid); if(!grid) return;
-    var cards=[].slice.call(grid.querySelectorAll('.card'));
-    cards.forEach(function(c){
-      var la=parseFloat(c.getAttribute('data-lat')), lo=parseFloat(c.getAttribute('data-lon'));
-      var d = (o && !isNaN(la) && !isNaN(lo)) ? hav(o.lat,o.lon,la,lo) : Infinity;
-      c._d = d;
-      var km=c.querySelector('.km'); if(km) km.textContent = isFinite(d)? fmtKm(d) : '';
-    });
-    cards.sort(function(a,b){
-      var ao=a.getAttribute('data-ok')==='1', bo=b.getAttribute('data-ok')==='1';
-      if(ao!==bo) return ao?-1:1;
-      return a._d - b._d;
-    });
-    cards.forEach(function(c){ grid.appendChild(c); });
+        +'<br><a href="'+p.url+'" target="_blank" rel="noopener">fiche</a> \u00b7 '
+        +'<a href="'+dir+'" target="_blank" rel="noopener">itin\u00e9raire</a>');
     });
   }
 
@@ -362,10 +532,12 @@ def _map_section(results, home, hist_stores=None) -> str:
 
   function setOrigin(lat,lon,label,opts){
     opts=opts||{};
-    var o={lat:lat,lon:lon,label:label||'Point choisi'};
+    var o={lat:lat,lon:lon,label:String(label||'Point choisi')};
     if(homeMarker) homeMarker.setLatLng([lat,lon]); else homeMarker=L.marker([lat,lon]).addTo(map);
-    homeMarker.bindPopup(o.label);
-    sortCards(o); refreshPopups(o);
+    var pop=document.createElement('span'); pop.textContent=o.label;   // pas d'injection HTML
+    homeMarker.bindPopup(pop);
+    window.vmcSetOrigin(o);
+    refreshPopups(o);
     var lbl=document.getElementById('vmc-origin-label'); if(lbl) lbl.textContent=o.label;
     if(opts.recenter!==false) recenter(o);
     if(opts.save!==false){ try{ localStorage.setItem('vmc_origin', JSON.stringify(o)); }catch(e){} }
@@ -403,44 +575,190 @@ def _map_section(results, home, hist_stores=None) -> str:
 })();
 </script>
 """
-    script = script.replace("__POINTS__", json.dumps(points, ensure_ascii=False))
+    # json.dumps n'échappe pas « </script> » : on neutralise « </ » par sécurité.
+    script = script.replace("__POINTS__", json.dumps(points, ensure_ascii=False).replace("</", "<\\/"))
     script = script.replace("__HOME__", json.dumps(home or {}))
     return bar + '<div id="map"></div>' + script
 
 
+# Liste : tri par distance depuis l'origine du visiteur, filtre de rayon,
+# N plus proches + « Voir les N autres », bandeau « Le plus proche ».
+_LIST_JS = """<script>(function(){
+var LIMIT=__LIMIT__, origin=null, expanded=false, radius=0;
+function rad(d){ return d*Math.PI/180; }
+function hav(la1,lo1,la2,lo2){ var R=6371,dLa=rad(la2-la1),dLo=rad(lo2-lo1);
+  var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(rad(la1))*Math.cos(rad(la2))*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return 2*R*Math.asin(Math.sqrt(a)); }
+function fmtKm(d){ if(d==null||!isFinite(d)) return ''; return (d<10? d.toFixed(1): Math.round(d))+' km'; }
+window.vmcHav=hav; window.vmcFmtKm=fmtKm;
+try{ var r=localStorage.getItem('vmc_radius'); if(r!==null) radius=parseInt(r,10)||0; }catch(e){}
+function dist(c){ var la=parseFloat(c.dataset.lat), lo=parseFloat(c.dataset.lon);
+  if(origin && !isNaN(la) && !isNaN(lo)) return hav(origin.lat,origin.lon,la,lo);
+  var k=parseFloat(c.dataset.km); return isNaN(k)? (c.dataset.lat? Infinity : -1) : k; }
+function apply(){
+  ['grid','grid2'].forEach(function(gid){
+    var g=document.getElementById(gid); if(!g) return;
+    var cards=[].slice.call(g.querySelectorAll('.card'));
+    cards.forEach(function(c){ c._d=dist(c); var km=c.querySelector('.km');
+      if(km) km.textContent = c._d>=0 && isFinite(c._d) ? fmtKm(c._d) : (c.dataset.lat? '' : 'en ligne'); });
+    cards.sort(function(a,b){ return a._d-b._d; });
+    cards.forEach(function(c){ g.appendChild(c); });
+    if(gid!=='grid') return;
+    var shown=0, hidden=0, inR=[];
+    cards.forEach(function(c){
+      var ok = !radius || c._d<0 || c._d<=radius;   // en ligne (-1) : toujours visible
+      if(ok) inR.push(c);
+      c.hidden = true;
+    });
+    inR.forEach(function(c){ if(expanded || shown<LIMIT){ c.hidden=false; shown++; } else hidden++; });
+    var more=document.getElementById('more'); if(more){ more.hidden = hidden===0;
+      more.textContent='Voir les '+hidden+' autre'+(hidden>1?'s':''); }
+    var cnt=document.getElementById('n-dispo'); if(cnt) cnt.textContent=inR.length;
+    var none=document.getElementById('none-radius'); if(none) none.hidden = inR.length>0 || cards.length===0;
+    // Bandeau « Le plus proche » : 1er magasin physique visible
+    var best=null; inR.forEach(function(c){ if(!best && c._d>=0 && isFinite(c._d)) best=c; });
+    var nb=document.getElementById('nearest');
+    if(nb && best){
+      nb.querySelector('.n-name').textContent=best.dataset.name;
+      nb.querySelector('.n-km').textContent=fmtKm(best._d);
+      var q=best.dataset.qty; nb.querySelector('.n-qty').textContent = q? q+' pièce'+(q>1?'s':'') : 'en stock';
+      var a=nb.querySelector('.n-fiche'), b=nb.querySelector('.n-itin');
+      if(a){ a.href=best.dataset.url||'#'; } if(b){ b.href=best.dataset.dir||'#'; b.hidden=!best.dataset.dir; }
+      nb.hidden=false;
+    } else if(nb){ nb.hidden=true; }
+  });
+}
+window.vmcSetOrigin=function(o){ origin=o; apply(); };
+document.addEventListener('DOMContentLoaded',function(){
+  var seg=document.getElementById('radius');
+  if(seg){ [].forEach.call(seg.querySelectorAll('button'),function(b){ b.classList.toggle('on', parseInt(b.dataset.r,10)===radius); });
+    seg.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return;
+      radius=parseInt(b.dataset.r,10)||0; try{ localStorage.setItem('vmc_radius',String(radius)); }catch(e2){}
+      [].forEach.call(seg.querySelectorAll('button'),function(x){ x.classList.toggle('on', x===b); }); apply(); }); }
+  var more=document.getElementById('more'); if(more) more.addEventListener('click',function(){ expanded=true; apply(); });
+  apply();
+});
+})();</script>"""
+
+_EXTRA_CSS = r"""
+  .grid { grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+  .card { position:relative; flex-direction:row; align-items:stretch; gap:10px; min-height:88px; padding:10px 12px; }
+  .card[hidden] { display:none; }
+  .card-link { position:absolute; inset:0; z-index:1; border-radius:13px; }
+  .card:hover { border-color:var(--primary); }
+  .c-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .c-top { display:flex; gap:6px; align-items:center; }
+  .c-line { font-size:12.5px; font-weight:600; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card:not(.card--ok) .c-line { color:var(--mut); }
+  .c-side { display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:4px; }
+  .itin { position:relative; z-index:2; text-decoration:none; font-size:18px; line-height:1; padding:2px; border-radius:8px; }
+  .itin:hover { background:var(--primary-tint); }
+  .tag--up { background:#f1f2f6; color:var(--success-dark); }
+  .seg { display:inline-flex; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:2px; gap:2px; }
+  .seg button { border:0; background:transparent; color:var(--mut); font-weight:700; font-size:12px; padding:5px 10px; border-radius:8px; cursor:pointer; }
+  .seg button.on { background:var(--card); color:var(--primary); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .sec-bar { max-width:1100px; margin:0 auto; padding:0 20px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .sec-bar .sec-h { padding:0; margin:0; }
+  .more { display:block; margin:-12px auto 26px; padding:9px 16px; border:1.5px solid var(--primary-tint); background:var(--card);
+          color:var(--primary); font-weight:700; border-radius:10px; cursor:pointer; font-size:13px; }
+  .nearest { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
+  .nearest .n-txt { font-size:16px; } .nearest .n-txt b { color:var(--success-dark); }
+  .nearest .btn { flex:0 0 auto; }
+  .nat-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .natsvg { height:200px; }
+  .natsvg .grid-l { stroke:var(--line); stroke-width:1; vector-effect:non-scaling-stroke; }
+  .natsvg .ax { fill:var(--mut); font-size:11px; }
+  .natsvg .area { fill:rgba(85,97,217,.12); }
+  .natsvg .ln { fill:none; stroke:#5561d9; stroke-width:2; vector-effect:non-scaling-stroke; stroke-linejoin:round; }
+  .natsvg .up { fill:#46c93a; stroke:#fff; stroke-width:1.5; vector-effect:non-scaling-stroke; }
+  .h-off { color:var(--mut); font-weight:600; }
+  @media (max-width:480px) {
+    .grid { grid-template-columns:1fr; gap:8px; }
+    .card { min-height:84px; }
+    .nat-top { flex-direction:column; }
+  }
+"""
+
+
+def _sources_html(results, sources: dict | None):
+    """Bandeau des sources + liste des sources actives pour le pied de page."""
+    src_ok: dict[str, bool] = {}
+    for r in results:
+        src_ok[r.retailer] = src_ok.get(r.retailer, False) or (r.status != UNKNOWN)
+    order = ["Castorama", "Boulanger", "Optimea"]
+    sources = dict(sources or {})
+    for n in src_ok:
+        sources.setdefault(n, "on")
+    names = [n for n in order if n in sources] + [n for n in sources if n not in order]
+    parts, active = [], []
+    for n in names:
+        st = sources[n]
+        if st == "disabled":
+            parts.append(f'<span class="h-off">{html.escape(n)} · désactivé</span>')
+        elif st == "down":
+            parts.append(f'<span class="h-ko">{html.escape(n)} · hors service</span>')
+            active.append(n)
+        elif src_ok.get(n):
+            parts.append(f'<span class="h-ok">{html.escape(n)} \u2713</span>')
+            active.append(n)
+        else:
+            parts.append(f'<span class="h-ko">{html.escape(n)} \u26a0\ufe0f</span>')
+            active.append(n)
+    return " ".join(parts), active
+
+
 def render(results: list[Availability], out_path: str | Path, home: dict | None = None,
-           history: dict | None = None) -> Path:
+           history: dict | None = None, sources: dict | None = None,
+           min_restock_delta: int = 3, list_limit: int = 12) -> Path:
     results = sorted(results, key=_sort_key)
     n_dispo = sum(1 for r in results if r.status == IN_STOCK)
-    n_total = len(results)
+    n_stores = sum(1 for r in results if r.lat is not None and r.lon is not None)
+    n_sites = sum(1 for r in results if r.distance_km is None and (r.lat is None or r.lon is None))
     total_pieces = sum(r.quantity for r in results if r.quantity)
     now = _now_paris()
     hist_stores = (history or {}).get("stores", {})
     now_ts = int(time.time())
     map_html = _map_section(results, home, hist_stores)
-    nat_html = _national_chart((history or {}).get("national", []))
+    nat_html = _national_chart((history or {}).get("national", []), min_restock_delta)
     avail = [r for r in results if r.status == IN_STOCK]
     others = [r for r in results if r.status != IN_STOCK]
-    cards_ok = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in avail) \
-        or '<p class="empty">Aucune disponibilité actuellement — vous serez notifié.</p>'
-    cards_other = "\n".join(_card(r, hist_stores.get(r.key), now_ts) for r in others) \
+    cards_ok = "\n".join(_card(r, hist_stores.get(r.key), now_ts, min_restock_delta) for r in avail)
+    cards_other = "\n".join(_card(r, hist_stores.get(r.key), now_ts, min_restock_delta) for r in others) \
         or '<p class="empty">Rien à afficher.</p>'
-    # Santé des sources : OK si au moins un résultat exploitable (≠ inconnu)
-    src_ok: dict[str, bool] = {}
-    for r in results:
-        src_ok[r.retailer] = src_ok.get(r.retailer, False) or (r.status != UNKNOWN)
-    order = ["Castorama", "Boulanger", "Optimea"]
-    names = [n for n in order if n in src_ok] + [n for n in src_ok if n not in order]
-    health_html = " ".join(
-        (f'<span class="h-ok">{n} \u2713</span>' if src_ok[n]
-         else f'<span class="h-ko">{n} \u26a0\ufe0f</span>')
-        for n in names)
+    health_html, active = _sources_html(results, sources)
 
-    headline = (f"{n_dispo} point{'s' if n_dispo > 1 else ''} de vente "
-                f"propose{'nt' if n_dispo > 1 else ''} le Midea PortaSplit&nbsp;!"
-                if n_dispo else "Aucune disponibilité pour le moment")
-    sub = ("Cliquez sur une fiche disponible pour réserver." if n_dispo
-           else f"Surveillance active sur {n_total} points de vente. Vous serez notifié dès qu'une dispo apparaît.")
+    # En-tête : le point de vente physique dispo le plus proche (recalculé côté
+    # navigateur selon la position du visiteur).
+    near = next((r for r in avail if r.distance_km is not None), None)
+    if near:
+        q = near.quantity
+        qtxt = f"{q} pièce{'s' if q and q > 1 else ''}" if isinstance(q, int) and q else "en stock"
+        dir_url = _gmaps(near.lat, near.lon) if near.lat is not None else "#"
+        headline = (
+            '<div class="nearest" id="nearest"><div class="n-txt">Le plus proche : '
+            f'<b class="n-name">{html.escape(_title(near))}</b>, '
+            f'<span class="n-km">{near.distance_km:.0f} km</span>, '
+            f'<span class="n-qty">{qtxt}</span></div>'
+            f'<a class="btn btn--primary n-fiche" href="{html.escape(near.url or "#", quote=True)}" target="_blank" rel="noopener">Voir la fiche</a>'
+            f'<a class="btn btn--ghost n-itin" href="{dir_url}" target="_blank" rel="noopener">Itin\u00e9raire</a></div>')
+        hero = f'<h1><span class="hl">PortaSplit disponible</span></h1>{headline}'
+    elif avail:
+        hero = ('<h1><span class="hl">PortaSplit disponible en ligne</span></h1>'
+                '<div class="nearest" id="nearest" hidden><div class="n-txt">Le plus proche : '
+                '<b class="n-name"></b>, <span class="n-km"></span>, <span class="n-qty"></span></div>'
+                '<a class="btn btn--primary n-fiche" href="#">Voir la fiche</a>'
+                '<a class="btn btn--ghost n-itin" href="#">Itin\u00e9raire</a></div>')
+    else:
+        hero = ('<h1>Aucune disponibilité pour le moment</h1>'
+                f'<p>Surveillance active sur {n_stores} magasins'
+                f'{f" et {n_sites} site" + ("s" if n_sites > 1 else "") if n_sites else ""}.</p>')
+
+    chip_pts = f"{n_stores} magasin{'s' if n_stores != 1 else ''}" + (
+        f" + {n_sites} site{'s' if n_sites > 1 else ''}" if n_sites else "")
+    radius_bar = ('<div class="seg" id="radius" role="group" aria-label="Rayon">'
+                  '<button data-r="50">50 km</button><button data-r="100">100 km</button>'
+                  '<button data-r="150">150 km</button><button data-r="0">Tout</button></div>')
+    footer_src = ", ".join(html.escape(n) for n in active) or "aucune source active"
 
     doc = f"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
@@ -453,161 +771,19 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vite Ma Clim">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+{_LEAFLET_CSS}
 <title>{APP_NAME} · Midea PortaSplit</title>
-<style>
-  :root {{
-    --primary:#5561d9; --primary-dark:#414dc4; --primary-tint:#edeefb;
-    --secondary:#ed505b; --success:#6db455; --success-dark:#4a9e34; --success-tint:#eef6e9;
-    --bg:#f4f5fb; --card:#ffffff; --line:#e7e9f2; --txt:#23262f; --mut:#737a8c;
-    font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
-  }}
-  * {{ box-sizing:border-box; }}
-  html {{ color-scheme:light dark; }}
-  body {{ margin:0; background:var(--bg); color:var(--txt); }}
-  .topbar {{ background:var(--card); border-bottom:1px solid var(--line); }}
-  .topbar .in {{ max-width:1100px; margin:0 auto; padding:16px 20px; display:flex;
-                 align-items:center; justify-content:space-between; }}
-  .logo {{ font-size:22px; font-weight:800; letter-spacing:-.5px; white-space:nowrap; }}
-  .logo .a {{ color:var(--txt); }} .logo .b {{ color:var(--primary); }}
-  .logo-sub {{ color:var(--mut); font-size:10.5px; font-weight:700; letter-spacing:.4px;
-               text-transform:uppercase; margin-top:1px; }}
-  .topbar .upd {{ color:var(--mut); font-size:12px; }}
-  .hero {{ max-width:1100px; margin:0 auto; padding:30px 20px 8px; }}
-  .hero h1 {{ font-size:26px; margin:0 0 6px; font-weight:800; letter-spacing:-.4px; }}
-  .hero p {{ margin:0; color:var(--mut); font-size:15px; }}
-  .hero h1 .hl {{ color:var(--success-dark); }}
-  .chips {{ display:flex; gap:10px; max-width:1100px; margin:18px auto 0; padding:0 20px; flex-wrap:wrap; }}
-  .chip {{ flex:1 1 150px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px;
-           font-size:13px; line-height:1.25; color:var(--mut); box-shadow:0 1px 2px rgba(20,23,40,.04); }}
-  .chip b {{ display:block; font-size:20px; color:var(--txt); line-height:1.1; margin-bottom:2px; }}
-  .chip.go b {{ color:var(--success-dark); }}
-  #map {{ height:360px; max-width:1100px; margin:20px auto 0; border-radius:18px;
-          border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,23,40,.05); }}
-  .leaflet-popup-content {{ font-size:13px; }}
-  .sec {{ max-width:1100px; margin:20px auto 0; padding:0; }}
-  .sec-h {{ max-width:1100px; margin:0 auto; padding:0 20px; font-size:15px; font-weight:800;
-            letter-spacing:-.2px; display:flex; align-items:center; gap:8px; color:var(--txt); }}
-  .sec-n {{ background:var(--primary-tint); color:var(--primary-dark); border-radius:999px;
-            padding:2px 9px; font-size:12px; font-weight:800; }}
-  details.others {{ margin-bottom:40px; }}
-  details.others summary {{ cursor:pointer; list-style:none; user-select:none; }}
-  details.others summary::-webkit-details-marker {{ display:none; }}
-  details.others summary::after {{ content:'\25BE'; color:var(--mut); margin-left:4px;
-            transition:transform .15s; display:inline-block; }}
-  details.others[open] summary::after {{ transform:rotate(180deg); }}
-  details.others .grid {{ margin-top:12px; }}
-  .health {{ max-width:1100px; margin:10px auto 0; padding:0 20px; font-size:12px; color:var(--mut); }}
-  .h-ok {{ color:var(--success-dark); font-weight:700; }}
-  .h-ko {{ color:#c0303b; font-weight:700; }}
-  .stale {{ max-width:1060px; margin:12px auto 0; padding:10px 14px; border-radius:12px;
-            background:#fff4d6; color:#9a6b00; font-size:13px; font-weight:600; }}
-  .grid {{ max-width:1100px; margin:14px auto 26px; padding:0 20px;
-           display:grid; grid-template-columns:repeat(auto-fill,minmax(208px,1fr)); gap:11px; }}
-  .card {{ background:var(--card); border:1px solid var(--line); border-radius:13px; padding:11px 13px;
-           box-shadow:0 1px 5px rgba(20,23,40,.06); display:flex; flex-direction:column; gap:5px; }}
-  .card--ok {{ border:1.5px solid var(--success); box-shadow:0 4px 18px rgba(109,180,85,.18); }}
-  .card-head {{ display:flex; align-items:center; justify-content:space-between; }}
-  .km {{ color:var(--mut); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }}
-  .badge {{ padding:2px 8px; border-radius:7px; font-size:10px; font-weight:800; color:#fff; letter-spacing:.3px; }}
-  .b-casto {{ background:#0a8a3f; }} .b-boul {{ background:#e2541d; }}
-  .b-optimea {{ background:#5561d9; }} .b-other {{ background:#737a8c; }}
-  .card-title {{ font-size:14.5px; margin:1px 0 0; font-weight:700; line-height:1.2; }}
-  .card-city {{ color:var(--mut); font-size:11.5px; }}
-  .state {{ align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:10.5px; font-weight:800; }}
-  .state--ok {{ background:var(--success-tint); color:var(--success-dark); }}
-  .state--no {{ background:#f1f2f6; color:#8b92a3; }}
-  .state--unk {{ background:#fdf2e2; color:#c77d22; }}
-  .tags {{ display:flex; flex-wrap:wrap; gap:4px; }}
-  .tag {{ padding:2px 7px; border-radius:6px; font-size:10px; font-weight:600; }}
-  .tag--good {{ background:var(--success-tint); color:var(--success-dark); }}
-  .tag--mut {{ background:#f1f2f6; color:#8b92a3; }}
-  .badges {{ display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 2px; }}
-  .tag--new {{ background:#fff4d6; color:#9a6b00; }}
-  .tag--restock {{ background:var(--primary-tint); color:var(--primary-dark); }}
-  .tag--retrait {{ background:var(--success-tint); color:var(--success-dark); }}
-  .tag--eta {{ background:#fde8e9; color:#c0303b; }}
-  .card--new {{ box-shadow:0 0 0 2px #ffd96b, 0 6px 20px rgba(255,193,7,.28); }}
-  .card-btns {{ display:flex; gap:6px; margin-top:4px; }}
-  .btn {{ flex:1; text-align:center; padding:6px 10px; border-radius:9px; font-size:12px;
-          font-weight:700; text-decoration:none; }}
-  .btn--primary {{ background:var(--primary); color:#fff; }}
-  .btn--primary:hover {{ background:var(--primary-dark); }}
-  .btn--ghost {{ background:var(--card); color:var(--primary); border:1.5px solid var(--primary-tint); }}
-  .btn--ghost:hover {{ border-color:var(--primary); }}
-  .empty {{ text-align:center; color:var(--mut); }}
-  footer {{ text-align:center; color:var(--mut); font-size:12px; padding:0 20px 40px; }}
-  .geo {{ max-width:1100px; margin:18px auto 0; padding:0 20px; display:flex; align-items:center;
-          gap:8px; flex-wrap:wrap; }}
-  .geo-ic {{ font-size:16px; }}
-  .geo input {{ flex:0 1 240px; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
-                font-size:14px; background:var(--card); color:var(--txt); }}
-  .geo-btn {{ padding:9px 14px; border:none; border-radius:10px; background:var(--primary); color:#fff;
-              font-weight:700; font-size:14px; cursor:pointer; }}
-  .geo-btn:hover {{ background:var(--primary-dark); }}
-  .geo-hint {{ color:var(--mut); font-size:13px; }}
-  .geo-hint b {{ color:var(--txt); }}
-  .geo-reset {{ color:var(--primary); font-size:13px; text-decoration:none; margin-left:auto; }}
-  .geo-reset:hover {{ text-decoration:underline; }}
-  .natchart {{ max-width:1100px; margin:18px auto 0; padding:14px 18px; background:var(--card);
-               border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 4px rgba(20,23,40,.05); }}
-  .natchart h2 {{ font-size:13px; color:var(--mut); margin:0; font-weight:700; }}
-  .natchart .natnote {{ font-weight:500; }}
-  .natchart .big {{ font-size:26px; font-weight:800; margin:2px 0 6px; }}
-  .natchart .natrange {{ font-size:12px; font-weight:600; color:var(--mut); margin-left:10px; }}
-  .natsvg {{ width:100%; height:120px; display:block; }}
-  .natwrap {{ position:relative; touch-action:pan-y; }}
-  .natline {{ position:absolute; top:0; bottom:0; width:1px; background:var(--primary);
-              opacity:.45; display:none; pointer-events:none; }}
-  .natdot {{ position:absolute; width:9px; height:9px; margin:-5px 0 0 -5px; border-radius:50%;
-             background:var(--primary); border:2px solid var(--card);
-             box-shadow:0 1px 4px rgba(0,0,0,.3); display:none; pointer-events:none; }}
-  .nattip {{ position:absolute; top:2px; background:rgba(35,38,47,.96); color:#fff;
-             font-size:12px; font-weight:700; padding:4px 8px; border-radius:8px;
-             white-space:nowrap; display:none; pointer-events:none; z-index:5; }}
-  .natsub {{ color:var(--mut); font-size:11px; margin-top:4px; }}
-  .seen {{ color:var(--success-dark); font-size:10.5px; font-weight:700; }}
-  .spark {{ display:block; }}
-  @media (max-width:480px) {{
-    .topbar .in {{ flex-direction:column; align-items:flex-start; gap:2px; padding:12px 16px; }}
-    .hero {{ padding:22px 16px 6px; }}
-    .hero h1 {{ font-size:21px; }}
-    .hero p {{ font-size:14px; }}
-    .chips {{ gap:8px; padding:0 16px; flex-wrap:nowrap; }}
-    .chip {{ flex:1 1 0; min-width:0; padding:10px 9px; font-size:11px; border-radius:12px; }}
-    .chip b {{ font-size:18px; }}
-    .natchart {{ margin:14px 16px 0; padding:12px 14px; }}
-    .natchart .big {{ font-size:22px; }}
-    .grid {{ padding:0 16px; gap:10px; grid-template-columns:1fr 1fr; }}
-  }}
-  @media (prefers-color-scheme: dark) {{
-    :root {{
-      --bg:#0f1117; --card:#1a1d27; --line:#2a2e3c; --txt:#e8eaf0; --mut:#9aa1b2;
-      --primary-tint:#262b52; --primary-dark:#8b95f0;
-      --success-dark:#7bc862; --success-tint:#1b2a17;
-    }}
-    .state--no {{ background:#262a36; color:#9aa1b2; }}
-    .state--unk {{ background:#3a2f12; color:#e0b15a; }}
-    .tag--mut {{ background:#262a36; color:#9aa1b2; }}
-    .tag--new {{ background:#3a2f12; color:#e6c155; }}
-    .tag--eta {{ background:#3a1f22; color:#f0a0a8; }}
-    .stale {{ background:#3a2f12; color:#e6c155; }}
-    .b-other {{ background:#4a5163; }}
-  }}
-</style></head>
+<style>{_CSS}{_EXTRA_CSS}</style></head>
 <body>
 <div class="topbar"><div class="in">
   <div class="brand"><div class="logo"><span class="a">Vite Ma </span><span class="b">Clim</span> ❄️</div><div class="logo-sub">Midea PortaSplit Tracker</div></div>
-  <div class="upd">Mis à jour le {now} · auto 2 min</div>
+  <div class="upd">Mis à jour le {now} · vérification auto toutes les 2 min</div>
 </div></div>
 
-<div class="hero">
-  <h1>{'<span class="hl">' + headline + '</span>' if n_dispo else headline}</h1>
-  <p>{sub}</p>
-</div>
+<div class="hero">{hero}</div>
 
 <div class="chips">
-  <div class="chip"><b>{n_total}</b>magasins suivis</div>
+  <div class="chip"><b>{chip_pts}</b>suivis</div>
   <div class="chip {'go' if n_dispo else ''}"><b>{n_dispo}</b>disponible{'s' if n_dispo != 1 else ''}</div>
   <div class="chip {'go' if total_pieces else ''}"><b>{total_pieces}</b>pièce{'s' if total_pieces != 1 else ''} en stock</div>
 </div>
@@ -615,16 +791,18 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
 <div class="health">Sources : {health_html}</div>
 <div id="stale" class="stale" hidden>\u26a0\ufe0f Donn\u00e9es possiblement p\u00e9rim\u00e9es \u2014 derni\u00e8re mise \u00e0 jour il y a <span id="staleage"></span>.</div>
 
-<section class="sec">
-  <h2 class="sec-h">Disponibles <span class="sec-n">{n_dispo}</span></h2>
-  <div class="grid" id="grid">
-{cards_ok}
-  </div>
-</section>
+{map_html}
 
 {nat_html}
 
-{map_html}
+<section class="sec">
+  <div class="sec-bar"><h2 class="sec-h">Disponibles <span class="sec-n" id="n-dispo">{n_dispo}</span></h2>{radius_bar if avail else ''}</div>
+  <div class="grid" id="grid">
+{cards_ok or '<p class="empty">Aucune disponibilité actuellement — vous serez notifié.</p>'}
+  </div>
+  <p class="empty" id="none-radius" hidden>Aucun magasin disponible dans ce rayon.</p>
+  <button class="more" id="more" hidden></button>
+</section>
 
 <details class="sec others" id="others"{' open' if n_dispo == 0 else ''}>
   <summary class="sec-h">Autres magasins (ruptures &amp; non r\u00e9f\u00e9renc\u00e9s) <span class="sec-n">{len(others)}</span></summary>
@@ -633,10 +811,12 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
   </div>
 </details>
 
-<footer>{APP_NAME} · données Castorama, Boulanger &amp; Optimea · classé par distance depuis chez vous</footer>
+<footer>{APP_NAME} · données {footer_src} · classé par distance depuis chez vous</footer>
 </body></html>"""
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Rechargement : version.json publié à côté ; le navigateur le consulte toutes
+    # les 2 min et ne recharge QUE si l'horodatage a changé (repli : rechargement après 3 échecs consécutifs).
     _live = (
         "<script>(function(){var GEN=" + str(now_ts) + ";"
         "function fmt(s){return s<3600?Math.round(s/60)+' min':(s/3600).toFixed(1).replace('.',',')+' h';}"
@@ -649,16 +829,25 @@ def render(results: list[Availability], out_path: str | Path, home: dict | None 
         "if(d)d.addEventListener('toggle',function(){try{sessionStorage.setItem('vmc-others',d.open?'1':'0');}catch(e){}});"
         "try{var y=sessionStorage.getItem('vmc-scroll');"
         "if(y!==null){window.scrollTo(0,parseInt(y,10));sessionStorage.removeItem('vmc-scroll');}}catch(e){}"
-        "setTimeout(function(){try{sessionStorage.setItem('vmc-scroll',String(window.scrollY||0));}catch(e){}"
-        "location.reload();},120000);"
+        "function reload(){try{sessionStorage.setItem('vmc-scroll',String(window.scrollY||0));}catch(e){}location.reload();}"
+        # Recharge seulement si version.json change ; repli : 3 échecs de suite.
+        "var fails=0;"
+        "function poll(){fetch('version.json?_='+Date.now(),{cache:'no-store'})"
+        ".then(function(r){if(!r.ok)throw 0;return r.json();})"
+        ".then(function(j){fails=0;if(j&&j.ts&&j.ts!==GEN)reload();})"
+        ".catch(function(){if(++fails>=3)reload();});}"
+        "setInterval(poll,120000);"
         "})();</script>"
     )
+    # Le script de liste doit être défini AVANT celui de la carte (qui l'appelle).
+    doc = doc.replace("<body>\n", "<body>\n" + _LIST_JS.replace("__LIMIT__", str(int(list_limit))) + "\n", 1)
     doc = doc.replace("</body>", _live + "</body>", 1)
     out.write_text(doc, encoding="utf-8")
-    # Ressources PWA / icône iOS (publiées à côté de index.html par le workflow).
+    # Ressources PWA / icône iOS + version.json (publiés à côté de index.html).
     try:
         (out.parent / "icon.png").write_bytes(base64.b64decode(_ICON_PNG_B64))
         (out.parent / "manifest.webmanifest").write_text(_MANIFEST, encoding="utf-8")
+        (out.parent / "version.json").write_text(json.dumps({"ts": now_ts}), encoding="utf-8")
     except Exception as e:
-        print(f"[dashboard] icône/manifeste non écrits: {e}")
+        print(f"[dashboard] icône/manifeste/version non écrits: {e}")
     return out

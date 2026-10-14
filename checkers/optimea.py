@@ -2,9 +2,9 @@
 
 Boutique WooCommerce : le statut de stock est exposé DIRECTEMENT dans le HTML
 via la balise meta `product:availability` (« in stock » / « out of stock »).
-Aucun rendu de page nécessaire : on récupère le HTML via le client HTTP du
-contexte navigateur (mêmes en-têtes/cookies qu'un vrai navigateur, mais sans
-charger la page), puis on lit la meta.
+On charge la page dans un VRAI onglet (page.goto) : l'ancien appel
+context.request.get était bloqué (pare-feu / anti-bot, réponses vides), alors
+qu'une navigation complète passe. On lit ensuite la meta dans le HTML rendu.
 """
 from __future__ import annotations
 
@@ -34,26 +34,32 @@ class OptimeaChecker(Checker):
 
     def check(self, context, products, zones):
         results: list[Availability] = []
-        for product in products:
-            results.append(self._check_product(context, product))
+        page = context.new_page()
+        try:
+            for product in products:
+                results.append(self._check_product(page, product))
+        finally:
+            page.close()
         return results
 
-    def _check_product(self, context, product) -> Availability:
+    def _check_product(self, page, product) -> Availability:
         url = product["url"]
         label = product.get("label", "Optimea")
         ref = str(product.get("ref", "optimea"))
         try:
-            resp = context.request.get(url, headers={
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "accept-language": "fr-FR,fr;q=0.9",
-            }, timeout=30000)
-            if not resp.ok:
+            resp = page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            if resp is not None and resp.status >= 400:
                 log(f"Optimea: HTTP {resp.status}")
                 return self._mk(label, ref, UNKNOWN, f"HTTP {resp.status}", url)
-            html = resp.text()
+            page.wait_for_timeout(1500)
+            html = page.content()
         except Exception as e:
-            log(f"Optimea: requête KO: {e}")
-            return self._mk(label, ref, UNKNOWN, "requête échouée", url)
+            log(f"Optimea: chargement KO: {e}")
+            return self._mk(label, ref, UNKNOWN, "page inaccessible", url)
+        return self.parse_html(html, label, ref, url)
+
+    def parse_html(self, html: str, label: str, ref: str, url: str) -> Availability:
+        """Analyse pure du HTML (testable sans navigateur)."""
 
         avail = _meta(html, "product:availability") or _meta(html, "og:availability")
         price = _meta(html, "product:price:amount")

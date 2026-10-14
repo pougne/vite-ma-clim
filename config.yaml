@@ -50,9 +50,15 @@ zones:
 # ---------------------------------------------------------------------
 # Enseignes et produits. ref/url = ce que tu as repéré sur chaque site.
 # ---------------------------------------------------------------------
+# Une enseigne active sans aucune réponse exploitable depuis N jours est
+# affichée « hors service » sur le dashboard.
+source_down_days: 7
+
 retailers:
   boulanger:
-    enabled: true
+    # Désactivé : la page Boulanger ne renvoie plus de marqueurs exploitables
+    # (statut « inconnu » depuis des semaines). À recalibrer avec discover.py.
+    enabled: false
     products:
       - ref: "1216685"
         label: "Midea PortaSplit (Boulanger)"
