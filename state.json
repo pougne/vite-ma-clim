@@ -3,25 +3,25 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Place de Clichy",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 14
+    "oos_streak": 15
   },
   "Castorama|8431312260509|casto-1487": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nation",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 412
+    "oos_streak": 413
   },
   "Castorama|8431312260509|casto-1506": {
     "status": "in_stock",
     "detail": "Stock magasin : 3 pièces · Retrait 2h ✓",
     "store_name": "Castorama Bir Hakeim",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 3,
     "oos_streak": 0
@@ -30,7 +30,7 @@
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Les Lilas",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
     "oos_streak": 0
@@ -39,7 +39,7 @@
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Levallois",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
     "oos_streak": 0
@@ -48,52 +48,52 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Créteil",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 349
+    "oos_streak": 350
   },
   "Castorama|8431312260509|casto-1422": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Villemomble",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 55
+    "oos_streak": 56
   },
   "Castorama|8431312260509|casto-1458": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Fresnes",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 119
+    "oos_streak": 120
   },
   "Castorama|8431312260509|casto-1462": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Vélizy",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 121
+    "oos_streak": 122
   },
   "Castorama|8431312260509|casto-1493": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Cormeilles-en-Parisis",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 7
+    "oos_streak": 8
   },
   "Castorama|8431312260509|casto-2601": {
     "status": "unknown",
     "detail": "stock inconnu",
     "store_name": "Casto Solférino",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
     "oos_streak": 0
@@ -102,16 +102,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Englos",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 119
+    "oos_streak": 120
   },
   "Castorama|8431312260509|casto-1410": {
     "status": "in_stock",
     "detail": "Stock magasin : 5 pièces · Retrait 2h ✓",
     "store_name": "Castorama Bondues",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 5,
     "oos_streak": 0
@@ -120,7 +120,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Hénin-Beaumont",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -129,7 +129,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 19 pièces · Retrait 2h ✓",
     "store_name": "Castorama Dunkerque",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 19,
     "oos_streak": 0
@@ -138,7 +138,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 19 pièces · Retrait 2h ✓",
     "store_name": "Castorama Creil St Maximin",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 19,
     "oos_streak": 0
@@ -147,7 +147,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 7 pièces · Retrait 2h ✓",
     "store_name": "Castorama Reims Thillois",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 7,
     "oos_streak": 0
@@ -156,16 +156,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Gonesse",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 28
+    "oos_streak": 29
   },
   "Castorama|8431312260509|casto-1455": {
     "status": "in_stock",
     "detail": "Stock magasin : 6 pièces · Retrait 2h ✓",
     "store_name": "Castorama Claye-Souilly",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 6,
     "oos_streak": 0
@@ -174,43 +174,43 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Pierrelaye",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 63
+    "oos_streak": 64
   },
   "Castorama|8431312260509|casto-1473": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Ormesson",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 123
+    "oos_streak": 124
   },
   "Castorama|8431312260509|casto-1423": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Melun",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 23
+    "oos_streak": 24
   },
   "Castorama|8431312260509|casto-1488": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Barentin",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 245
+    "oos_streak": 246
   },
   "Castorama|8431312260509|casto-1508": {
     "status": "in_stock",
     "detail": "Stock magasin : 21 pièces · Retrait 2h ✓",
     "store_name": "Castorama Chambourcy",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 21,
     "oos_streak": 0
@@ -219,16 +219,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Les-Clayes-Sous-Bois",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 233
+    "oos_streak": 234
   },
   "Castorama|8431312260509|casto-1497": {
     "status": "in_stock",
     "detail": "Stock magasin : 24 pièces · Retrait 2h ✓",
     "store_name": "Castorama Coignières",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 24,
     "oos_streak": 0
@@ -237,7 +237,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 9 pièces · Retrait 2h ✓",
     "store_name": "Castorama Caen Hérouville",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 9,
     "oos_streak": 0
@@ -246,7 +246,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 7 pièces · Retrait 2h ✓",
     "store_name": "Castorama Caen Fleury-sur-Orne",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 7,
     "oos_streak": 0
@@ -255,7 +255,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 8 pièces · Retrait 2h ✓",
     "store_name": "Castorama Le Mans",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 8,
     "oos_streak": 0
@@ -264,7 +264,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 3 pièces · Retrait 2h ✓",
     "store_name": "Castorama Cap Malo",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 3,
     "oos_streak": 0
@@ -273,16 +273,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Rennes-St Jacques",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 130
+    "oos_streak": 131
   },
   "Castorama|8431312260509|casto-1456": {
     "status": "in_stock",
     "detail": "Stock magasin : 14 pièces · Retrait 2h ✓",
     "store_name": "Castorama Olivet",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 14,
     "oos_streak": 0
@@ -291,34 +291,34 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Villabé",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 10
+    "oos_streak": 11
   },
   "Castorama|8431312260509|casto-1457": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Les Ulis",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 20
+    "oos_streak": 21
   },
   "Castorama|8431312260509|casto-1412": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Chambray-Lès-Tours",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 217
+    "oos_streak": 218
   },
   "Castorama|8431312260509|casto-1452": {
     "status": "in_stock",
     "detail": "Stock magasin : 1 pièce · Retrait 2h ✓",
     "store_name": "Castorama Poitiers",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 1,
     "oos_streak": 0
@@ -327,7 +327,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 1 pièce · Retrait 2h ✓",
     "store_name": "Castorama Niort",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 1,
     "oos_streak": 0
@@ -336,34 +336,34 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nantes La Beaujoire",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 409
+    "oos_streak": 410
   },
   "Castorama|8431312260509|casto-1411": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Nantes Orvault",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 130
+    "oos_streak": 131
   },
   "Castorama|8431312260509|casto-1430": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Limoges",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 130
+    "oos_streak": 131
   },
   "Castorama|8431312260509|casto-1481": {
     "status": "in_stock",
     "detail": "Stock magasin : 4 pièces · Retrait 2h ✓",
     "store_name": "Castorama Vannes",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 4,
     "oos_streak": 0
@@ -372,7 +372,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 7 pièces · Retrait 2h ✓",
     "store_name": "Castorama St Nazaire",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 7,
     "oos_streak": 0
@@ -381,16 +381,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Quimper",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 181
+    "oos_streak": 182
   },
   "Castorama|8431312260509|casto-1459": {
     "status": "in_stock",
     "detail": "Stock magasin : 31 pièces · Retrait 2h ✓",
     "store_name": "Castorama La Rochelle",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 31,
     "oos_streak": 0
@@ -399,7 +399,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 9 pièces · Retrait 2h ✓",
     "store_name": "Castorama Brest",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 9,
     "oos_streak": 0
@@ -408,7 +408,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Dijon",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -417,7 +417,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 13 pièces · Retrait 2h ✓",
     "store_name": "Castorama Chalon-sur-Saône",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 13,
     "oos_streak": 0
@@ -426,7 +426,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 3 pièces · Retrait 2h ✓",
     "store_name": "Castorama Besançon",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 3,
     "oos_streak": 0
@@ -435,7 +435,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 13 pièces · Retrait 2h ✓",
     "store_name": "Castorama Bourg-en-Bresse",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 13,
     "oos_streak": 0
@@ -444,7 +444,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 8 pièces · Retrait 2h ✓",
     "store_name": "Castorama Roanne",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 8,
     "oos_streak": 0
@@ -453,7 +453,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 19 pièces · Retrait 2h ✓",
     "store_name": "Castorama Rillieux-La-Pape",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 19,
     "oos_streak": 0
@@ -462,7 +462,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Dardilly",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -471,7 +471,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 2 pièces · Retrait 2h ✓",
     "store_name": "Castorama Vandoeuvre",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 2,
     "oos_streak": 0
@@ -480,16 +480,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Metz Tessy",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 2
+    "oos_streak": 3
   },
   "Castorama|8431312260509|casto-1437": {
     "status": "in_stock",
     "detail": "Stock magasin : 20 pièces · Retrait 2h ✓",
     "store_name": "Castorama Bron",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 20,
     "oos_streak": 0
@@ -498,16 +498,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Metz",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 193
+    "oos_streak": 194
   },
   "Castorama|8431312260509|casto-1463": {
     "status": "in_stock",
     "detail": "Stock magasin : 20 pièces · Retrait 2h ✓",
     "store_name": "Castorama Terville",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 20,
     "oos_streak": 0
@@ -516,7 +516,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 11 pièces · Retrait 2h ✓",
     "store_name": "Castorama Colmar",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 11,
     "oos_streak": 0
@@ -525,16 +525,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Strasbourg",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 479
+    "oos_streak": 480
   },
   "Castorama|8431312260509|casto-1478": {
     "status": "in_stock",
     "detail": "Stock magasin : 6 pièces · Retrait 2h ✓",
     "store_name": "Castorama Kingersheim",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 6,
     "oos_streak": 0
@@ -543,7 +543,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Chambéry",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -552,7 +552,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 10 pièces · Retrait 2h ✓",
     "store_name": "Castorama Givors",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 10,
     "oos_streak": 0
@@ -561,7 +561,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 32 pièces · Retrait 2h ✓",
     "store_name": "Castorama Bourgoin-Jallieu",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 32,
     "oos_streak": 0
@@ -570,7 +570,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 24 pièces · Retrait 2h ✓",
     "store_name": "Castorama St Marcel Les Valence",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 24,
     "oos_streak": 0
@@ -579,7 +579,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 22 pièces · Retrait 2h ✓",
     "store_name": "Castorama Grenoble",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 22,
     "oos_streak": 0
@@ -588,43 +588,43 @@
     "status": "in_stock",
     "detail": "Stock magasin : 6 pièces · Retrait 2h ✓",
     "store_name": "Castorama Clermont-Ferrand",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 6,
     "oos_streak": 0
   },
   "Castorama|8431312260509|casto-1464": {
     "status": "in_stock",
-    "detail": "Stock magasin : 5 pièces · Retrait 2h ✓",
+    "detail": "Stock magasin : 4 pièces · Retrait 2h ✓",
     "store_name": "Castorama Villenave d'Ornon",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
-    "notified_qty": 5,
+    "notified_qty": 4,
     "oos_streak": 0
   },
   "Castorama|8431312260509|casto-2537": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Mérignac",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 14
+    "oos_streak": 15
   },
   "Castorama|8431312260509|casto-3061": {
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Bordeaux Lormont",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 558
+    "oos_streak": 559
   },
   "Castorama|8431312260509|casto-1513": {
     "status": "in_stock",
     "detail": "Stock magasin : 2 pièces · Retrait 2h ✓",
     "store_name": "Castorama Angoulême",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 2,
     "oos_streak": 0
@@ -633,7 +633,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 15 pièces · Retrait 2h ✓",
     "store_name": "Castorama Agen",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 15,
     "oos_streak": 0
@@ -642,16 +642,16 @@
     "status": "out_of_stock",
     "detail": "Rupture en magasin",
     "store_name": "Castorama Anglet",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 0,
-    "oos_streak": 290
+    "oos_streak": 291
   },
   "Castorama|8431312260509|casto-1512": {
     "status": "in_stock",
     "detail": "Stock magasin : 12 pièces · Retrait 2h ✓",
     "store_name": "Castorama Pau - Lescar",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 12,
     "oos_streak": 0
@@ -660,7 +660,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 31 pièces · Retrait 2h ✓",
     "store_name": "Castorama Toulouse L'Union",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 31,
     "oos_streak": 0
@@ -669,7 +669,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 15 pièces · Retrait 2h ✓",
     "store_name": "Castorama Toulouse St Orens",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 15,
     "oos_streak": 0
@@ -678,7 +678,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 32 pièces · Retrait 2h ✓",
     "store_name": "Castorama Toulouse Blagnac",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 32,
     "oos_streak": 0
@@ -687,7 +687,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 20 pièces · Retrait 2h ✓",
     "store_name": "Castorama Portet sur Garonne",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 20,
     "oos_streak": 0
@@ -696,7 +696,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Béziers",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -705,7 +705,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 19 pièces · Retrait 2h ✓",
     "store_name": "Castorama Perpignan",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 19,
     "oos_streak": 0
@@ -714,7 +714,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 18 pièces · Retrait 2h ✓",
     "store_name": "Castorama St Clément",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 18,
     "oos_streak": 0
@@ -723,7 +723,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 8 pièces · Retrait 2h ✓",
     "store_name": "Castorama Lattes",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 8,
     "oos_streak": 0
@@ -732,7 +732,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 22 pièces · Retrait 2h ✓",
     "store_name": "Castorama Nîmes",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 22,
     "oos_streak": 0
@@ -741,7 +741,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Avignon",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -750,7 +750,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 15 pièces · Retrait 2h ✓",
     "store_name": "Castorama Vitrolles",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 15,
     "oos_streak": 0
@@ -759,7 +759,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 9 pièces · Retrait 2h ✓",
     "store_name": "Castorama Plan de Campagne",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 9,
     "oos_streak": 0
@@ -768,7 +768,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 12 pièces · Retrait 2h ✓",
     "store_name": "Castorama Aix en Provence",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 12,
     "oos_streak": 0
@@ -777,7 +777,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 33 pièces · Retrait 2h ✓",
     "store_name": "Castorama Marseille St - Loup",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 33,
     "oos_streak": 0
@@ -786,7 +786,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 23 pièces · Retrait 2h ✓",
     "store_name": "Castorama La Seyne sur Mer",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 23,
     "oos_streak": 0
@@ -795,7 +795,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 9 pièces · Retrait 2h ✓",
     "store_name": "Castorama Toulon La Garde",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 9,
     "oos_streak": 0
@@ -804,7 +804,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 16 pièces · Retrait 2h ✓",
     "store_name": "Castorama Fréjus",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 16,
     "oos_streak": 0
@@ -813,7 +813,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 52 pièces · Retrait 2h ✓",
     "store_name": "Castorama Antibes",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 52,
     "oos_streak": 0
@@ -822,7 +822,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 38 pièces · Retrait 2h ✓",
     "store_name": "Castorama Le Cannet",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 38,
     "oos_streak": 0
@@ -831,7 +831,7 @@
     "status": "in_stock",
     "detail": "Stock magasin : 19 pièces · Retrait 2h ✓",
     "store_name": "Castorama Mandelieu",
-    "checked_at": "2026-10-24T15:27:46+00:00",
+    "checked_at": "2026-10-24T15:47:51+00:00",
     "notified": false,
     "notified_qty": 19,
     "oos_streak": 0
@@ -840,15 +840,11 @@
     "Castorama": {
       "streak": 0,
       "alerted": false,
-      "last_ok_ts": 1792855666
+      "last_ok_ts": 1792856871
     }
   },
   "__history__": {
     "national": [
-      [
-        1789644492,
-        0
-      ],
       [
         1789645716,
         0
@@ -8908,6 +8904,10 @@
       [
         1792855666,
         928
+      ],
+      [
+        1792856871,
+        927
       ]
     ],
     "stores": {
@@ -17179,7 +17179,7 @@
         "name": "Castorama Villenave d'Ornon",
         "city": "33140",
         "first_seen": 1792637274,
-        "last": 5,
+        "last": 4,
         "series": [
           [
             1792595336,
@@ -17216,6 +17216,10 @@
           [
             1792855666,
             5
+          ],
+          [
+            1792856871,
+            4
           ]
         ]
       }
